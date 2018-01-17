@@ -29,7 +29,7 @@ from root_numpy import array2hist
 from root_pandas import read_root
 
 import ROOT
-from config import cfg
+from tact.config import cfg
 
 
 def makedirs(*paths):

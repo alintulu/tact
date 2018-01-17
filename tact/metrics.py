@@ -12,7 +12,7 @@ import numpy as np
 from scipy.stats import kstwobign
 from sklearn.metrics import classification_report, confusion_matrix
 
-from config import cfg
+from tact.config import cfg
 
 
 def print_metrics(df_train, df_test, mva):

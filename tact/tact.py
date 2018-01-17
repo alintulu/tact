@@ -1,12 +1,11 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
 mva_analysis.py
 
 Usage:
-    mva_analysis.py config.yaml
-or  mva_analysis.py --stdin < config.yaml
+    tact config.yaml
+or  tact --stdin < config.yaml
 """
 
 from __future__ import (absolute_import, division, print_function,
@@ -16,12 +15,9 @@ import sys
 
 from sklearn.model_selection import train_test_split
 
-import classifiers
-import metrics
-import plotting as pt
-import preprocessing
-import rootIO
-from config import cfg, read_config
+from tact import plotting as pt
+from tact import classifiers, metrics, preprocessing, rootIO
+from tact.config import cfg, read_config
 
 
 def main():

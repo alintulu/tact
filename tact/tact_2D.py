@@ -1,12 +1,11 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
 2D.py
 
 Usage:
-    2D.py config.yaml
-or  2D.py --stdin < config.yaml
+    tact_2D config.yaml
+or  tact_2D --stdin < config.yaml
 """
 
 from __future__ import (absolute_import, division, print_function,
@@ -16,10 +15,8 @@ import sys
 
 import numpy as np
 
-import classifiers
-import plotting
-import rootIO
-from config import cfg, read_config
+from tact import classifiers, plotting, rootIO
+from tact.config import cfg, read_config
 
 
 def main():

@@ -25,7 +25,7 @@ from collections import namedtuple
 import numpy as np
 from sklearn.pipeline import make_pipeline
 
-from config import cfg
+from tact.config import cfg
 
 np.random.seed(52)
 
