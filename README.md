@@ -15,6 +15,7 @@ To install run
 ```bash
 pip install -e .
 ```
+from the project's root directory.
 
 For multi-layer perception support, specify:
 ```bash
