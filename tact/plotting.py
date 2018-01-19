@@ -20,7 +20,8 @@ from sklearn.metrics import auc, roc_curve
 from tact.config import cfg
 
 
-def make_variable_histograms(sig_df, bkg_df, filename="vars.pdf"):
+def make_variable_histograms(sig_df, bkg_df,
+                             col_w="EvtWeight", filename="vars.pdf"):
     """
     Produce histograms comparing the distribution of features in sig_df and
     bkg_df.
@@ -34,6 +35,8 @@ def make_variable_histograms(sig_df, bkg_df, filename="vars.pdf"):
         DataFrame containing signal data.
     bkg_df : DataFrame
         DataFrame containing background data.
+    col_w : string, optional
+        Name of the column in sig_df and bkg_df containing event weights.
     filename : string, optional
         Name of the file the plot is saved to.
 
@@ -44,8 +47,8 @@ def make_variable_histograms(sig_df, bkg_df, filename="vars.pdf"):
 
     def plot_histograms(df, ax):
         """Plot histograms for every column in df"""
-        return df[features].hist(bins=42, ax=ax, alpha=0.5,
-                                 weights=df.EvtWeight, normed=True)
+        return df[features].hist(bins=42, ax=ax, alpha=0.5, weights=df[col_w],
+                                 normed=True)
 
     features = cfg["features"]
 
@@ -121,13 +124,13 @@ def make_corelation_plot(df, filename="corr.pdf"):
 
 
 def make_response_plot(sig_df_train, sig_df_test, bkg_df_train, bkg_df_test,
-                       bins=25, filename="response.pdf"):
+                       bins=25, col_x="MVA", col_w="EvtWeight",
+                       filename="response.pdf"):
     """
     Produce histogram comparing the response of the test data and training data
-    in signal and background.
+    in signal and background in the observable specified by col_x.
 
-    Every provided DataFrame must contain a column named "MVA" containing the
-    response.
+    Typically used to compare the distribution of the MVA response.
 
     Parameters
     ----------
@@ -139,6 +142,10 @@ def make_response_plot(sig_df_train, sig_df_test, bkg_df_train, bkg_df_test,
         Dataframe containing background training data.
     bkg_df_test : DataFrame
         Dataframe containing background testing data.
+    col_x : string, optional
+        Name of column containing data to be binned.
+    col_w : string, optional
+        Name of column containing event weights in df_test and df_train.
     bins : int, optional
         Number of bins in histogram
     filename : string, optional
@@ -154,19 +161,19 @@ def make_response_plot(sig_df_train, sig_df_test, bkg_df_train, bkg_df_test,
     # Plot histograms of test samples
     for df, label in ((sig_df_test, "Signal (test sample)"),
                       (bkg_df_test, "Background (test sample)")):
-        ax = df.MVA.plot.hist(bins=bins, ax=ax, weights=df.EvtWeight,
-                              normed=True, range=x_range, alpha=0.5,
-                              label=label)
+        ax = df[col_x].plot.hist(bins=bins, ax=ax, weights=df[col_w],
+                                   normed=True, range=x_range, alpha=0.5,
+                                   label=label)
 
     plt.gca().set_prop_cycle(None)  # use the same colours again
 
     # Plot error bar plots of training samples
     for df, label in ((sig_df_train, "Signal (training sample)"),
                       (bkg_df_train, "Background (training sample)")):
-        hist, bin_edges = np.histogram(df.MVA, bins=bins, range=x_range,
-                                       weights=df.EvtWeight)
-        hist2 = np.histogram(df.MVA, bins=bins, range=x_range,
-                             weights=df.EvtWeight.pow(2))[0]
+        hist, bin_edges = np.histogram(df[col_x], bins=bins, range=x_range,
+                                       weights=df[col_w])
+        hist2 = np.histogram(df[col_x], bins=bins, range=x_range,
+                             weights=df[col_w].pow(2))[0]
         db = np.array(np.diff(bin_edges), float)
         yerr = np.sqrt(hist2) / db / hist.sum()
         hist = hist / db / hist.sum()
@@ -180,7 +187,8 @@ def make_response_plot(sig_df_train, sig_df_test, bkg_df_train, bkg_df_test,
     fig.savefig(filename)
 
 
-def make_roc_curve(df_train, df_test, filename="roc.pdf"):
+def make_roc_curve(df_train, df_test, col_mva="MVA", col_w="EvtWeight",
+                   filename="roc.pdf"):
     """
     Plot the receiver operating characteristic curve for the test and training
     data.
@@ -191,6 +199,10 @@ def make_roc_curve(df_train, df_test, filename="roc.pdf"):
         DataFrame containing training data.
     df_test : DataFrame
         DataFrame containing testing data.
+    col_mva : string, optional
+        Name of column containing MVA responses in df_test and df_train.
+    col_w : string, optional
+        Name of column containing event weights in df_test and df_train.
     filename : string, optional
         Name of the file the plot is saved to.
 
@@ -204,8 +216,8 @@ def make_roc_curve(df_train, df_test, filename="roc.pdf"):
     roc_auc = {}
 
     for i, df in (("train", df_train), ("test", df_test)):
-        fpr[i], tpr[i], _ = roc_curve(df.Signal, df.MVA,
-                                      sample_weight=df.EvtWeight)
+        fpr[i], tpr[i], _ = roc_curve(df.Signal, df[col_mva],
+                                      sample_weight=df[col_w])
         roc_auc[i] = auc(fpr[i], tpr[i], reorder=True)
 
     plt.style.use("ggplot")
@@ -252,8 +264,7 @@ def make_scatter_plot(df, col_x="MVA1", col_y="MVA2", col_w="EvtWeight",
         Name of the column in df whose values should be used as the y-position
         on the 2D plane.
     col_w : string, optional
-        Name of the column in df whose values should be used as the sample
-        weights.
+        Name of column in df containing event weights.
     filename : string, optional
         Name of the file the plot is saved to.
 

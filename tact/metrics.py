@@ -15,7 +15,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tact.config import cfg
 
 
-def print_metrics(df_train, df_test, mva):
+def print_metrics(df_train, df_test, mva, col_mva="MVA", col_w="EvtWeight"):
     """
     Print metrics for a trained classifier to stdout.
 
@@ -32,7 +32,11 @@ def print_metrics(df_train, df_test, mva):
     df_train: DataFrame
         DataFrame containing training data.
     mva
-        Classifier trained on df_train
+        Classifier trained on df_train.
+    col_mva : string, optional
+        Name of column containing MVA responses in df_test and df_train.
+    col_w : string, optional
+        Name of column containing event weights in df_test and df_train.
 
     Returns
     -------
@@ -65,15 +69,15 @@ def print_metrics(df_train, df_test, mva):
 
     print("KS Test p-value")
     print("Signal:")
-    print(ks_2samp(df_train[df_train.Signal == 1].MVA,
-                   df_test[df_test.Signal == 1].MVA,
-                   df_train[df_train.Signal == 1].EvtWeight,
-                   df_test[df_test.Signal == 1].EvtWeight)[1])
+    print(ks_2samp(df_train[df_train.Signal == 1][col_mva],
+                   df_test[df_test.Signal == 1][col_mva],
+                   df_train[df_train.Signal == 1][col_w],
+                   df_test[df_test.Signal == 1][col_w])[1])
     print("Background:")
-    print(ks_2samp(df_train[df_train.Signal == 0].MVA,
-                   df_test[df_test.Signal == 0].MVA,
-                   df_train[df_train.Signal == 0].EvtWeight,
-                   df_test[df_test.Signal == 0].EvtWeight)[1])
+    print(ks_2samp(df_train[df_train.Signal == 0][col_mva],
+                   df_test[df_test.Signal == 0][col_mva],
+                   df_train[df_train.Signal == 0][col_w],
+                   df_test[df_test.Signal == 0][col_w])[1])
     print()
 
     if hasattr(mva, "feature_importances_"):

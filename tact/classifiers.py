@@ -62,7 +62,7 @@ def evaluate_mva(df, mva):
         return mva.predict_proba(df.as_matrix())[:, 1]
 
 
-def mlp(df_train, pre):
+def mlp(df_train, pre, col_target="Signal", col_w="MVAWeight"):
     """
     Train using a multi-layer perceptron (MLP).
 
@@ -72,6 +72,10 @@ def mlp(df_train, pre):
         DataFrame containing training data.
     pre : list
         List containing preprocessing steps.
+    col_target : string, optional
+        Name of column in df_train containing target values.
+    col_w : string, optional
+        Name of column in df_train containing sample weights.
 
     Returns
     -------
@@ -114,14 +118,14 @@ def mlp(df_train, pre):
 
     mva = make_pipeline(*(pre + [ann]))
 
-    mva.fit(df_train[cfg["features"]].as_matrix(), df_train.Signal.as_matrix(),
-            kerasclassifier__sample_weight=df_train.MVAWeight.as_matrix(),
+    mva.fit(df_train[cfg["features"]].as_matrix(), df_train[col_target].as_matrix(),
+            kerasclassifier__sample_weight=df_train[col_w].as_matrix(),
             kerasclassifier__callbacks=callbacks)
 
     return mva
 
 
-def bdt_ada(df_train, pre):
+def bdt_ada(df_train, pre, col_target="Signal", col_w="MVAWeight"):
     """
     Train using an AdaBoosted decision tree.
 
@@ -131,6 +135,10 @@ def bdt_ada(df_train, pre):
         DataFrame containing training data.
     pre : list
         List containing preprocessing steps.
+    col_target : string, optional
+        Name of column in df_train containing target values.
+    col_w : string, optional
+        Name of column in df_train containing sample weights.
 
     Returns
     -------
@@ -147,13 +155,13 @@ def bdt_ada(df_train, pre):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train.Signal,
-            adaboostclassifier__sample_weight=df_train.MVAWeight.as_matrix())
+    mva.fit(df_train[cfg["features"]], df_train[col_target],
+            adaboostclassifier__sample_weight=df_train[col_w].as_matrix())
 
     return mva
 
 
-def bdt_grad(df_train, pre):
+def bdt_grad(df_train, pre, col_target="Signal", col_w="MVAWeight"):
     """
     Train using a gradient boosted tecision tree using scikit-learn's
     internal implementation.
@@ -164,6 +172,10 @@ def bdt_grad(df_train, pre):
         DataFrame containing training data.
     pre : list
         List containing preprocessing steps.
+    col_target : string, optional
+        Name of column in df_train containing target values.
+    col_w : string, optional
+        Name of column in df_train containing sample weights.
 
     Returns
     -------
@@ -178,13 +190,13 @@ def bdt_grad(df_train, pre):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train.Signal,
-            gradientboostingclassifier__sample_weight=df_train.MVAWeight)
+    mva.fit(df_train[cfg["features"]], df_train[col_target],
+            gradientboostingclassifier__sample_weight=df_train[col_w])
 
     return mva
 
 
-def bdt_xgb(df_train, pre):
+def bdt_xgb(df_train, pre, col_target="Signal", col_w="MVAWeight"):
     """
     Train using a gradient boosted decision tree with the XGBoost library.
 
@@ -197,6 +209,10 @@ def bdt_xgb(df_train, pre):
     features : list
         List containing the names of features to be trained upon. These should
         correspond to column headings in df_train.
+    col_target : string, optional
+        Name of column in df_train containing target values.
+    col_w : string, optional
+        Name of column in df_train containing sample weights.
 
     Returns
     -------
@@ -215,16 +231,16 @@ def bdt_xgb(df_train, pre):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train.Signal,
-            xgboostclassifier__sample_weight=df_train.MVAWeight,)
+    mva.fit(df_train[cfg["features"]], df_train[col_target],
+            xgboostclassifier__sample_weight=df_train[col_w])
             # eval_metric="auc",
             # early_stopping_rounds=50,
-            # eval_set=[(df_test[cfg["features"]], df_test.Signal)])
+            # eval_set=[(df_test[cfg["features"]], df_test[col_target])])
 
     return mva
 
 
-def random_forest(df_train, pre):
+def random_forest(df_train, pre, col_target="Signal", col_w="MVAWeight"):
     """
     Train using a random forest.
 
@@ -234,6 +250,10 @@ def random_forest(df_train, pre):
         DataFrame containing training data.
     pre : list
         List containing preprocessing steps.
+    col_target : string, optional
+        Name of column in df_train containing target values.
+    col_w : string, optional
+        Name of column in df_train containing sample weights.
 
     Returns
     -------
@@ -248,8 +268,8 @@ def random_forest(df_train, pre):
 
     mva = make_pipeline(*(pre + [rf]))
 
-    rf.fit(df_train[cfg["features"]], df_train.Signal,
-           randomforestclassifier__sample_weight=df_train.MVAWeight)
+    rf.fit(df_train[cfg["features"]], df_train[col_target],
+           randomforestclassifier__sample_weight=df_train[col_w])
 
     return mva
 

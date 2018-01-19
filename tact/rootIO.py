@@ -105,13 +105,10 @@ def read_tree(root_file, tree):
     return df
 
 
-def balance_weights(df1, df2):
+def balance_weights(df1, df2, col_w="MVAWeight"):
     """
     Balance the weights in two different DataFrames so they sum to the same
     value.
-
-    This function will use values found in the "MVAWeight" column in df1 and
-    df2 as weights.
 
     Parameters
     ----------
@@ -119,13 +116,15 @@ def balance_weights(df1, df2):
         First DataFrame.
     df2 : DataFrame
         Second DataFrame.
+    col_w : string, optional
+        Name of column in df1 and df2 containing weights.
 
     Returns
     -------
     df1 : DataFrame
-         First DataFrame with adjusted weights.
+        First DataFrame with adjusted weights.
     df2 : DataFrame
-         Second DataFrame with adjusted weights.
+        Second DataFrame with adjusted weights.
 
     Notes
     -----
@@ -134,18 +133,18 @@ def balance_weights(df1, df2):
     other.
     """
 
-    sum1 = df1.MVAWeight.sum()
-    sum2 = df2.MVAWeight.sum()
+    sum1 = df1[col_w].sum()
+    sum2 = df2[col_w].sum()
     scale = truediv(*sorted([sum1, sum2], reverse=True))  # always scale up
 
     if sum1 < sum2:
-        df1.MVAWeight = df1.MVAWeight * scale
+        df1[col_w] = df1[col_w] * scale
     elif sum1 > sum2:
-        df2.MVAWeight = df2.MVAWeight * scale
+        df2[col_w] = df2[col_w] * scale
 
-    assert np.isclose(df1.MVAWeight.sum(), df2.MVAWeight.sum())
-    assert df1.MVAWeight.sum() >= sum1
-    assert df2.MVAWeight.sum() >= sum2
+    assert np.isclose(df1[col_w].sum(), df2[col_w].sum())
+    assert df1[col_w].sum() >= sum1
+    assert df2[col_w].sum() >= sum2
 
     return df1, df2
 
@@ -183,6 +182,8 @@ def read_trees():
         ----------
         path : string
             Path to ROOT file.
+        col_w : string, optional
+            Name of column in df1 and df2 containing weights.
 
         Returns
         -------
@@ -192,10 +193,11 @@ def read_trees():
 
         return re.split(r"histofile_|\.", path)[-2]
 
-    def reweight(df):
+    def reweight(df, col_w="MVAWeight"):
         """
-        Takes the absolute value of every MVAWeight in a data frame, and scales
-        the resulting weights down to restore the original normalisation.
+        Takes the absolute value of every weight in a data frame, and scales
+        the resulting weights down to restore the original normalisation. The
+        results are stored in the "MVAWeight" column.
 
         Will fail if the normalisation of df is < 0.
 
@@ -203,23 +205,26 @@ def read_trees():
         ----------
         df : DataFrame
             DataFrame containing entries to be reweighted.
+        col_w : string, optional
+            Name of column in df1 and df2 containing weights.
 
         Returns
         -------
         DataFrame
-            DataFrame with adjusted MVAWeight.
+            DataFrame with adjusted weights.
         """
 
-        df["MVAWeight"] = np.abs(df.EvtWeight)
+        df["MVAWeight"] = np.abs(df[col_w])
         try:
-            df["MVAWeight"] = df.MVAWeight * \
-                    (df.EvtWeight.sum() / df.MVAWeight.sum())
+            df["MVAWeight"] = df["MVAWeight"] * \
+                    (df[col_w].sum() / df["MVAWeight"].sum())
         except ZeroDivisionError:  # all weights are 0 or df is empty
             pass
 
-        assert np.isclose(df.EvtWeight.sum(), df.MVAWeight.sum()), \
+        assert np.isclose(df[col_w].sum(), df["MVAWeight"].sum()), \
             "Bad weight renormalisation"
-        assert (df.MVAWeight >= 0).all(), "Negative MVA Weights after reweight"
+        assert (df["MVAWeight"] >= 0).all(), \
+            "Negative MVA Weights after reweight"
 
         return df
 
@@ -313,15 +318,19 @@ def _format_TH1_name(name):
     return name
 
 
-def MVA_to_TH1(df, name="MVA", title="MVA", range=(0, 1)):
+def col_to_TH1(df, col_x="MVA", col_w="EvtWeight", name="MVA", title="MVA",
+               range=(0, 1)):
     """
-    Write MVA discriminant from a DataFrame to a TH1D.
+    Write data in col_x to a TH1
 
     Parameters
     ----------
     df : DataFrame
-        Dataframe contaning an "MVA" column containing the MVA discriminant and
-        "EvtWeight" column containing event weights.
+        Dataframe containing data to be added to TH1.
+    col_x : string, optional
+        Name of column containing data to be binned.
+    col_w : string, optional
+        Name of column containing event weights in df.
     name : string, optional
         Name of TH1.
     title : string, optional
@@ -344,10 +353,10 @@ def MVA_to_TH1(df, name="MVA", title="MVA", range=(0, 1)):
 
     bins = cfg["root_out"]["bins"]
 
-    contents = np.histogram(df.MVA, bins=bins, range=range,
-                            weights=df.EvtWeight)[0]
-    errors, bin_edges = np.histogram(df.MVA, bins=bins, range=range,
-                                     weights=df.EvtWeight.pow(2))
+    contents = np.histogram(df[col_x], bins=bins, range=range,
+                            weights=df[col_w])[0]
+    errors, bin_edges = np.histogram(df[col_x], bins=bins, range=range,
+                                     weights=df[col_w].pow(2))
     errors = np.sqrt(errors)
 
     h = ROOT.TH1D(name, title, len(bin_edges) - 1, bin_edges)
@@ -378,18 +387,19 @@ def poisson_pseudodata(df, range=(0, 1)):
     Should only be used in THETA.
     """
 
-    h = MVA_to_TH1(df, range=range)
+    h = col_to_TH1(df, range=range)
 
     for i in xrange(1, h.GetNbinsX() + 1):
         try:
             h.SetBinContent(i, np.random.poisson(h.GetBinContent(i)))
-        except ValueError:  # negatve bin
+        except ValueError:  # negative bin
             h.SetBinContent(i, -np.random.poisson(-h.GetBinContent(i)))
 
     return h
 
 
-def write_root(response_function, range=(0, 1), filename="mva.root"):
+def write_root(response_function, col_w="EvtWeight", range=(0, 1),
+               filename="mva.root"):
     """
     Evaluate an MVA and write the result to TH1s in a ROOT file.
 
@@ -398,10 +408,12 @@ def write_root(response_function, range=(0, 1), filename="mva.root"):
     response_function : callable
         Callable which takes a dataframe as its argument and returns an
         array-like containing the classifier responses.
-    filename : string, optional
-        Name of the output root file (including directory).
+    col_w : string, optional
+        Name of branch containing event weights in ROOT files.
     range : (float, float), optional
         Lower and upper range of bins.
+    filename : string, optional
+        Name of the output root file (including directory).
 
     Returns
     -------
@@ -431,18 +443,18 @@ def write_root(response_function, range=(0, 1), filename="mva.root"):
             df = df.assign(MVA=response_function(df[features]))
 
             # Look for and handle NaN Event Weights:
-            nan_weights = df.EvtWeight.isnull().sum()
+            nan_weights = df[col_w].isnull().sum()
             if nan_weights > 0:
                 print("WARNING:", nan_weights, "NaN weights found")
                 if cfg["root_out"]["drop_nan"]:
-                    df = df[pd.notnull(df["EvtWeight"])]
+                    df = df[pd.notnull(df[col_w])]
 
             # Trees used in pseudodata should be not systematics and not data
             if not re.search(r"(minus)|(plus)|({})$".format(data_name), tree):
                 pseudo_dfs.append(df)
 
             tree = _format_TH1_name(tree)
-            h = MVA_to_TH1(df, name=tree, title=tree, range=range)
+            h = col_to_TH1(df, name=tree, title=tree, range=range)
             h.SetDirectory(fo)
             fo.cd()
             h.Write()

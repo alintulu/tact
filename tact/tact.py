@@ -52,14 +52,14 @@ def main():
     bkg_df = df[df.Signal == 0]
 
     pt.make_variable_histograms(sig_df, bkg_df,
-                                "{}vars_{}.pdf".format(cfg["plot_dir"],
-                                                       cfg["channel"]))
+                                filename="{}vars_{}.pdf"
+                                .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(sig_df[features],
-                            "{}corr_sig_{}.pdf".format(cfg["plot_dir"],
-                                                       cfg["channel"]))
+                            filename="{}corr_sig_{}.pdf"
+                            .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(bkg_df[features],
-                            "{}corr_bkg_{}.pdf".format(cfg["plot_dir"],
-                                                       cfg["channel"]))
+                            filename="{}corr_bkg_{}.pdf"
+                            .format(cfg["plot_dir"], cfg["channel"]))
 
     # Split sample
     df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"],
@@ -97,8 +97,8 @@ def main():
                           filename="{}response_{}.pdf".format(cfg["plot_dir"],
                                                               cfg["channel"]))
     pt.make_roc_curve(df_train, df_test,
-                      "{}roc_{}.pdf".format(cfg["plot_dir"],
-                                            cfg["channel"]))
+                      filename="{}roc_{}.pdf".format(cfg["plot_dir"],
+                                                     cfg["channel"]))
 
     rootIO.write_root(lambda df: classifiers.evaluate_mva(df, mva),
                       filename="{}mva_{}.root".format(cfg["root_dir"],
