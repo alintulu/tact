@@ -20,6 +20,9 @@ For multi-layer perception support, specify:
 ```bash
 pip install -e .[MLP]
 ```
+This will install the Keras package, but not a (required!) Keras backend.
+Consult the Keras documentation for availible backends, but note only the
+Theano backend has been tested.
 
 For gradient boosted decision trees using the xgboost library, specify:
 ```bash
