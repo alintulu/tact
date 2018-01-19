@@ -12,7 +12,7 @@ setup(name="tact",
       license="BSD",
       packages=["tact"],
       entry_points={
-          "console_scripts": ["tact=tact.tact:main"
+          "console_scripts": ["tact=tact.tact:main",
                               "tact2D=tact_2D:main"],
       },
       install_requires=[
