@@ -90,7 +90,7 @@ def print_metrics(df_train, df_test, mva):
 
 def ecdf(x, xw=None):
     r"""
-    Return the empirical cumulative distrbution function (ECDF) for a set of
+    Return the empirical cumulative distribution function (ECDF) for a set of
     observations.
 
     Parameters
