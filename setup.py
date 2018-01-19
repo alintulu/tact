@@ -21,7 +21,7 @@ setup(name="tact",
           "more_itertools",
           "numpy",
           "pandas",
-          "PyYAML"
+          "PyYAML",
           "root_numpy",
           "root_pandas",
           "scikit_learn",
