@@ -27,6 +27,9 @@ def main():
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
 
+    # Make ouptut directories
+    rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
+
     # Load pickled classifiers
     mva1, cfg["mva1"] = classifiers.load_classifier(open(cfg["classifier1"],
                                                          "rb"))
