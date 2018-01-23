@@ -79,7 +79,9 @@ def main():
         mva = classifiers.bdt_grad(df_train[features], pre, df_train.Signal,
                                    sample_weight=df_train.MVAWeight)
     elif cfg["classifier"] == "random_forest":
-        mva = classifiers.random_forest(df_train, pre)
+        mva = classifiers.random_forest(df_train[features], pre,
+                                        df_train.Signal,
+                                        sample_weight=df_train.MVAWeight)
 
     df_test = df_test.assign(MVA=classifiers.evaluate_mva(df_test[features],
                                                           mva))
