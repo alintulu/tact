@@ -227,8 +227,8 @@ def read_trees():
     for root_file in root_files:
         process = get_process_name(root_file)
 
-        # Only include samples in the whitelist
-        if process not in cfg["whitelist"]:
+        # Only include specfied processes
+        if process not in cfg["signals"] + cfg["backgrounds"]:
             continue
 
         df = read_tree(root_file, "Ttree_{}".format(process))
