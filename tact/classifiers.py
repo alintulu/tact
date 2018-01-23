@@ -36,7 +36,7 @@ def evaluate_mva(df, mva):
 
     Parameters
     ----------
-    df : DataFrame
+    df : DataFrame, shape= [n_training_samples, n_features]
         DataFrame containing features.
     mva
         Trained classifier.
@@ -62,20 +62,21 @@ def evaluate_mva(df, mva):
         return mva.predict_proba(df.as_matrix())[:, 1]
 
 
-def mlp(df_train, pre, col_target="Signal", col_w="MVAWeight"):
+def mlp(df_train, pre, y, sample_weight=None):
     """
     Train using a multi-layer perceptron (MLP).
 
     Parameters
     ----------
-    df_train : DataFrame
-        DataFrame containing training data.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
     pre : list
         List containing preprocessing steps.
-    col_target : string, optional
-        Name of column in df_train containing target values.
-    col_w : string, optional
-        Name of column in df_train containing sample weights.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
 
     Returns
     -------
@@ -85,7 +86,7 @@ def mlp(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     Notes
     -----
-    This function requires Keras to be availible. Additional configuration can
+    This function requires Keras to be available. Additional configuration can
     be configured using Keras' configuration file. See the Keras documentation
     for more information.
 
@@ -118,27 +119,42 @@ def mlp(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     mva = make_pipeline(*(pre + [ann]))
 
-    mva.fit(df_train[cfg["features"]].as_matrix(), df_train[col_target].as_matrix(),
-            kerasclassifier__sample_weight=df_train[col_w].as_matrix(),
+    # Keras does not like pandas
+    try:
+        df_train = df_train.as_matrix()
+    except AttributeError:
+        pass
+    try:
+        y = y.as_matrix()
+    except AttributeError:
+        pass
+    try:
+        sample_weight = sample_weight.as_matrix()
+    except AttributeError:
+        pass
+
+    mva.fit(df_train, y,
+            kerasclassifier__sample_weight=sample_weight,
             kerasclassifier__callbacks=callbacks)
 
     return mva
 
 
-def bdt_ada(df_train, pre, col_target="Signal", col_w="MVAWeight"):
+def bdt_ada(df_train, pre, y, sample_weight=None):
     """
     Train using an AdaBoosted decision tree.
 
     Parameters
     ----------
-    df_train : DataFrame
-        DataFrame containing training data.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
     pre : list
         List containing preprocessing steps.
-    col_target : string, optional
-        Name of column in df_train containing target values.
-    col_w : string, optional
-        Name of column in df_train containing sample weights.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
 
     Returns
     -------
@@ -155,27 +171,27 @@ def bdt_ada(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train[col_target],
-            adaboostclassifier__sample_weight=df_train[col_w].as_matrix())
+    mva.fit(df_train, y, adaboostclassifier__sample_weight=sample_weight)
 
     return mva
 
 
-def bdt_grad(df_train, pre, col_target="Signal", col_w="MVAWeight"):
+def bdt_grad(df_train, pre, y, sample_weight=None):
     """
-    Train using a gradient boosted tecision tree using scikit-learn's
+    Train using a gradient boosted decision tree using scikit-learn's
     internal implementation.
 
     Parameters
     ----------
-    df_train : DataFrame
-        DataFrame containing training data.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
     pre : list
         List containing preprocessing steps.
-    col_target : string, optional
-        Name of column in df_train containing target values.
-    col_w : string, optional
-        Name of column in df_train containing sample weights.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
 
     Returns
     -------
@@ -190,29 +206,27 @@ def bdt_grad(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train[col_target],
-            gradientboostingclassifier__sample_weight=df_train[col_w])
+    mva.fit(df_train, y,
+            gradientboostingclassifier__sample_weight=sample_weight)
 
     return mva
 
 
-def bdt_xgb(df_train, pre, col_target="Signal", col_w="MVAWeight"):
+def bdt_xgb(df_train, pre, y, sample_weight=None):
     """
     Train using a gradient boosted decision tree with the XGBoost library.
 
     Parameters
     ----------
-    df_train : DataFrame
-        DataFrame containing training data.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
     pre : list
         List containing preprocessing steps.
-    features : list
-        List containing the names of features to be trained upon. These should
-        correspond to column headings in df_train.
-    col_target : string, optional
-        Name of column in df_train containing target values.
-    col_w : string, optional
-        Name of column in df_train containing sample weights.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
 
     Returns
     -------
@@ -231,29 +245,29 @@ def bdt_xgb(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train[cfg["features"]], df_train[col_target],
-            xgboostclassifier__sample_weight=df_train[col_w])
+    mva.fit(df_train, y, xgboostclassifier__sample_weight=sample_weight)
             # eval_metric="auc",
             # early_stopping_rounds=50,
-            # eval_set=[(df_test[cfg["features"]], df_test[col_target])])
+            # eval_set=[(df_test, sample_weight)])
 
     return mva
 
 
-def random_forest(df_train, pre, col_target="Signal", col_w="MVAWeight"):
+def random_forest(df_train, pre, y, sample_weight=None):
     """
     Train using a random forest.
 
     Parameters
     ----------
-    df_train : DataFrame
-        DataFrame containing training data.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
     pre : list
         List containing preprocessing steps.
-    col_target : string, optional
-        Name of column in df_train containing target values.
-    col_w : string, optional
-        Name of column in df_train containing sample weights.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
 
     Returns
     -------
@@ -268,15 +282,15 @@ def random_forest(df_train, pre, col_target="Signal", col_w="MVAWeight"):
 
     mva = make_pipeline(*(pre + [rf]))
 
-    rf.fit(df_train[cfg["features"]], df_train[col_target],
-           randomforestclassifier__sample_weight=df_train[col_w])
+    rf.fit(df_train, y, randomforestclassifier__sample_weight=sample_weight)
 
     return mva
 
 
 def save_classifier(mva, filename="mva"):
     """
-    Write a trained classifier pipeline and global config to an external file.
+    Write a trained classifier pipeline and global configuration to an external
+    file.
 
     Parameters
     ----------

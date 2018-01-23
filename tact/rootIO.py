@@ -105,26 +105,20 @@ def read_tree(root_file, tree):
     return df
 
 
-def balance_weights(df1, df2, col_w="MVAWeight"):
+def balance_weights(w1, w2):
     """
     Balance the weights in two different DataFrames so they sum to the same
     value.
 
     Parameters
     ----------
-    df1 : DataFrame
-        First DataFrame.
-    df2 : DataFrame
-        Second DataFrame.
-    col_w : string, optional
-        Name of column in df1 and df2 containing weights.
+    w1, w2 : array-like
+        Weights to be balanced.
 
     Returns
     -------
-    df1 : DataFrame
-        First DataFrame with adjusted weights.
-    df2 : DataFrame
-        Second DataFrame with adjusted weights.
+    w1, w2 : Series
+        Adjusted weights.
 
     Notes
     -----
@@ -133,20 +127,20 @@ def balance_weights(df1, df2, col_w="MVAWeight"):
     other.
     """
 
-    sum1 = df1[col_w].sum()
-    sum2 = df2[col_w].sum()
+    sum1 = np.sum(w1)
+    sum2 = np.sum(w2)
     scale = truediv(*sorted([sum1, sum2], reverse=True))  # always scale up
 
     if sum1 < sum2:
-        df1[col_w] = df1[col_w] * scale
+        w1 = w1 * scale
     elif sum1 > sum2:
-        df2[col_w] = df2[col_w] * scale
+        w2 = w2 * scale
 
-    assert np.isclose(df1[col_w].sum(), df2[col_w].sum())
-    assert df1[col_w].sum() >= sum1
-    assert df2[col_w].sum() >= sum2
+    assert np.isclose(np.sum(w1), np.sum(w2))
+    assert np.sum(w1) >= sum1
+    assert np.sum(w2) >= sum2
 
-    return df1, df2
+    return w1, w2
 
 
 def read_trees():
@@ -193,40 +187,37 @@ def read_trees():
 
         return re.split(r"histofile_|\.", path)[-2]
 
-    def reweight(df, col_w="MVAWeight"):
+    def reweight(w):
         """
-        Takes the absolute value of every weight in a data frame, and scales
-        the resulting weights down to restore the original normalisation. The
-        results are stored in the "MVAWeight" column.
+        Takes the absolute value of the supplied weights, and scales the
+        resulting weights down to restore the original normalisation.
 
-        Will fail if the normalisation of df is < 0.
+        Will fail if the normalisation is < 0.
 
         Parameters
         ----------
-        df : DataFrame
-            DataFrame containing entries to be reweighted.
-        col_w : string, optional
-            Name of column in df1 and df2 containing weights.
+        w : Series
+            Series containing weights.
 
         Returns
         -------
-        DataFrame
-            DataFrame with adjusted weights.
+        Series
+            Series with adjusted weights.
         """
 
-        df["MVAWeight"] = np.abs(df[col_w])
+        reweighted = np.abs(w)
         try:
-            df["MVAWeight"] = df["MVAWeight"] * \
-                    (df[col_w].sum() / df["MVAWeight"].sum())
+            reweighted = reweighted * \
+                    (np.sum(w) / np.sum(reweighted))
         except ZeroDivisionError:  # all weights are 0 or df is empty
             pass
 
-        assert np.isclose(df[col_w].sum(), df["MVAWeight"].sum()), \
+        assert np.isclose(np.sum(w), np.sum(reweighted)), \
             "Bad weight renormalisation"
         assert (df["MVAWeight"] >= 0).all(), \
             "Negative MVA Weights after reweight"
 
-        return df
+        return reweighted
 
     sig_dfs = []
     bkg_dfs = []
@@ -247,7 +238,7 @@ def read_trees():
 
         # Deal with weights
         if cfg["negative_weight_treatment"] == "reweight":
-            df = reweight(df)
+            df.assign(MVAWeight=reweight(df.EvtWeight))
         elif cfg["negative_weight_treatment"] == "abs":
             df["MVAWeight"] = np.abs(df.EvtWeight)
         elif cfg["negative_weight_treatment"] == "passthrough":
@@ -274,7 +265,8 @@ def read_trees():
 
     # Equalise signal and background weights if we were asked to
     if cfg["equalise_signal"]:
-        sig_df, bkg_df = balance_weights(sig_df, bkg_df)
+        sig_df.MVAWeight, bkg_df.MVAWeight = balance_weights(sig_df.MVAWeight,
+                                                             bkg_df.MVAWeight)
 
     # Label signal and background
     sig_df["Signal"] = 1
@@ -318,19 +310,16 @@ def _format_TH1_name(name):
     return name
 
 
-def col_to_TH1(df, col_x="MVA", col_w="EvtWeight", name="MVA", title="MVA",
-               range=(0, 1)):
+def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=200, range=(0, 1)):
     """
     Write data in col_x to a TH1
 
     Parameters
     ----------
-    df : DataFrame
-        Dataframe containing data to be added to TH1.
-    col_x : string, optional
-        Name of column containing data to be binned.
-    col_w : string, optional
-        Name of column containing event weights in df.
+    x : Series
+        Data to be binned.
+    w : Series
+        Weights. If None, then samples are equally weighted.
     name : string, optional
         Name of TH1.
     title : string, optional
@@ -351,12 +340,10 @@ def col_to_TH1(df, col_x="MVA", col_w="EvtWeight", name="MVA", title="MVA",
     the weighted contents and error of each bin is preserved.
     """
 
-    bins = cfg["root_out"]["bins"]
-
-    contents = np.histogram(df[col_x], bins=bins, range=range,
-                            weights=df[col_w])[0]
-    errors, bin_edges = np.histogram(df[col_x], bins=bins, range=range,
-                                     weights=df[col_w].pow(2))
+    contents = np.histogram(x, bins=bins, range=range,
+                            weights=w)[0]
+    errors, bin_edges = np.histogram(x, bins=bins, range=range,
+                                     weights=np.power(w, 2))
     errors = np.sqrt(errors)
 
     h = ROOT.TH1D(name, title, len(bin_edges) - 1, bin_edges)
@@ -454,7 +441,9 @@ def write_root(response_function, col_w="EvtWeight", range=(0, 1),
                 pseudo_dfs.append(df)
 
             tree = _format_TH1_name(tree)
-            h = col_to_TH1(df, name=tree, title=tree, range=range)
+            h = col_to_TH1(df.MVA, w=df.EvtWeight,
+                           bins=cfg["root_out"]["bins"],
+                           name=tree, title=tree, range=range)
             h.SetDirectory(fo)
             fo.cd()
             h.Write()

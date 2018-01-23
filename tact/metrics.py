@@ -12,78 +12,90 @@ import numpy as np
 from scipy.stats import kstwobign
 from sklearn.metrics import classification_report, confusion_matrix
 
-from tact.config import cfg
+from tact import classifiers
 
 
-def print_metrics(df_train, df_test, mva, col_mva="MVA", col_w="EvtWeight"):
+def print_metrics(mva, df_train, df_test,
+                  y_train, y_test,
+                  mva_response_train=None, mva_response_test=None,
+                  w_train=None, w_test=None):
     """
     Print metrics for a trained classifier to stdout.
 
     This will print the classification report from scikit-learn for the test
     and training sample and the confusion matrix for the test and training
     sample. The p-value for the two-sample Kolmogorov-Smirnov test performed on
-    the test and training samples will b given for the signal and bacground.
+    the test and training samples will b given for the signal and background.
     Finally, if supported by the classifier, feature importances will be shown.
 
     Parameters
     ----------
-    df_test : DataFrame
-        DataFrame containing testing data.
-    df_train: DataFrame
-        DataFrame containing training data.
     mva
         Classifier trained on df_train.
-    col_mva : string, optional
-        Name of column containing MVA responses in df_test and df_train.
-    col_w : string, optional
-        Name of column containing event weights in df_test and df_train.
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
+    df_test : array-like, shape = [n_testing_samples, n_features]
+        DataFrame containing testing features.
+    y_train : array-like, shape = [n_training_samples]
+        Target values for df_train.
+    y_test : array-like, shape = [n_testing_samples]
+        Target values for df_test.
+    mva_response_train : array-like, shape = [n_training_samples], optional
+        MVA responses for df_train. Will be calculated from mva if None.
+    mva_response_test : array-like, shape = [n_testing_samples], optional
+        MVA responses for df_test. Will be calculated from mva if None.
+    w_train : array-like, shape = [n_training_samples], optional
+        Observation weights for df_train. If None, then samples are equally
+        weighted.
+    w_test : array-like, shape = [n_testing_samples], optional
+        Observation weights for df_test. If None, then samples are equally
+        weighted.
 
     Returns
     -------
     None
     """
 
-    features = cfg["features"]
+    train_prediction = mva.predict(df_train.as_matrix())
+    test_prediction = mva.predict(df_test.as_matrix())
 
-    try:
-        test_prediction = mva.predict(df_test[features])
-        train_prediction = mva.predict(df_train[features])
-    except (KeyError, UnboundLocalError):
-        test_prediction = mva.predict(df_test[features].as_matrix())
-        train_prediction = mva.predict(df_train[features].as_matrix())
+    if mva_response_train is None:
+        mva_response_train = classifiers.evaluate_mva(df_train, mva)
+    if mva_response_test is None:
+        mva_response_test = classifiers.evaluate_mva(df_test, mva)
 
     print("Classification Reports")
     print("Test sample:")
-    print(classification_report(df_test.Signal, test_prediction,
+    print(classification_report(y_test, test_prediction,
                                 target_names=["background", "signal"]))
     print("Training sample:")
-    print(classification_report(df_train.Signal, train_prediction,
+    print(classification_report(y_train, train_prediction,
                                 target_names=["background", "signal"]))
 
     print("Confusion matrix:")
     print("Test sample:")
-    print(confusion_matrix(df_test.Signal, test_prediction))
+    print(confusion_matrix(y_test, test_prediction))
     print("Training sample:")
-    print(confusion_matrix(df_train.Signal, train_prediction))
+    print(confusion_matrix(y_train, train_prediction))
     print()
 
     print("KS Test p-value")
     print("Signal:")
-    print(ks_2samp(df_train[df_train.Signal == 1][col_mva],
-                   df_test[df_test.Signal == 1][col_mva],
-                   df_train[df_train.Signal == 1][col_w],
-                   df_test[df_test.Signal == 1][col_w])[1])
+    print(ks_2samp(mva_response_train[y_train == 1],
+                   mva_response_test[y_test == 1],
+                   w_train[y_train == 1],
+                   w_test[y_test == 1])[1])
     print("Background:")
-    print(ks_2samp(df_train[df_train.Signal == 0][col_mva],
-                   df_test[df_test.Signal == 0][col_mva],
-                   df_train[df_train.Signal == 0][col_w],
-                   df_test[df_test.Signal == 0][col_w])[1])
+    print(ks_2samp(mva_response_train[y_train == 0],
+                   mva_response_test[y_test == 0],
+                   w_train[y_train == 0],
+                   w_test[y_test == 0])[1])
     print()
 
     if hasattr(mva, "feature_importances_"):
         print("Feature importance:")
         for var, importance in sorted(
-                zip(features, mva.feature_importances_),
+                zip(list(df_train), mva.feature_importances_),
                 key=lambda x: x[1],
                 reverse=True):
             print("{0:15} {1:.3E}".format(var, importance))

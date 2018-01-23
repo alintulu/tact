@@ -51,7 +51,7 @@ def main():
     sig_df = df[df.Signal == 1]
     bkg_df = df[df.Signal == 0]
 
-    pt.make_variable_histograms(sig_df, bkg_df,
+    pt.make_variable_histograms(sig_df[features], bkg_df[features],
                                 filename="{}vars_{}.pdf"
                                 .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(sig_df[features],
@@ -67,13 +67,17 @@ def main():
 
     # Classify
     if cfg["classifier"] == "mlp":
-        mva = classifiers.mlp(df_train, pre)
+        mva = classifiers.mlp(df_train[features], pre, df_train.Signal,
+                              sample_weight=df_train.MVAWeight)
     elif cfg["classifier"] == "bdt_ada":
-        mva = classifiers.bdt_ada(df_train, pre)
+        mva = classifiers.bdt_ada(df_train[features], pre, df_train.Signal,
+                                  sample_weight=df_train.MVAWeight)
     elif cfg["classifier"] == "bdt_xgb":
-        mva = classifiers.bdt_xgb(df_train, pre)
+        mva = classifiers.bdt_xgb(df_train[features], pre, df_train.Signal,
+                                  sample_weight=df_train.MVAWeight)
     elif cfg["classifier"] == "bdt_grad":
-        mva = classifiers.bdt_grad(df_train, pre)
+        mva = classifiers.bdt_grad(df_train[features], pre, df_train.Signal,
+                                   sample_weight=df_train.MVAWeight)
     elif cfg["classifier"] == "random_forest":
         mva = classifiers.random_forest(df_train, pre)
 
@@ -88,15 +92,24 @@ def main():
                                                       cfg["channel"]))
 
     # Metrics
-    metrics.print_metrics(df_train, df_test, mva)
+    metrics.print_metrics(mva, df_train[features], df_test[features],
+                          df_train.Signal, df_test.Signal,
+                          df_train.MVA, df_test.MVA,
+                          df_train.EvtWeight, df_test.EvtWeight)
 
-    pt.make_response_plot(df_train[df_train.Signal == 1],
-                          df_test[df_test.Signal == 1],
-                          df_train[df_train.Signal == 0],
-                          df_test[df_test.Signal == 0],
+    pt.make_response_plot(df_train[df_train.Signal == 1].MVA,
+                          df_test[df_test.Signal == 1].MVA,
+                          df_train[df_train.Signal == 0].MVA,
+                          df_test[df_test.Signal == 0].MVA,
+                          df_train[df_train.Signal == 1].EvtWeight,
+                          df_test[df_test.Signal == 1].EvtWeight,
+                          df_train[df_train.Signal == 0].EvtWeight,
+                          df_test[df_test.Signal == 0].EvtWeight,
                           filename="{}response_{}.pdf".format(cfg["plot_dir"],
                                                               cfg["channel"]))
-    pt.make_roc_curve(df_train, df_test,
+    pt.make_roc_curve(df_train.MVA, df_test.MVA,
+                      df_train.Signal, df_test.Signal,
+                      df_train.EvtWeight, df_test.EvtWeight,
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
