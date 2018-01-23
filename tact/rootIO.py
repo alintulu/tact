@@ -57,7 +57,7 @@ def makedirs(*paths):
                 raise
 
 
-def read_tree(root_file, tree, selection):
+def read_tree(root_file, tree, selection=None):
     """
     Read a Ttree into a DataFrame
 
@@ -67,6 +67,9 @@ def read_tree(root_file, tree, selection):
         Path of ROOT file to be read.
     tree : string
         Name of Ttree in root_file to be read.
+    selection : string, optional
+        ROOT selection string specifying cuts that should be made on read-in
+        tree. If None, no cuts are made.
 
     Returns
     -------
