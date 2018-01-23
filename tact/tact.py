@@ -32,7 +32,7 @@ def main():
     rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
 
     # Read samples
-    df = rootIO.read_trees()
+    df = rootIO.read_trees(cfg["selection"])
 
     features = cfg["features"]
 
@@ -114,6 +114,7 @@ def main():
                                                      cfg["channel"]))
 
     rootIO.write_root(lambda df: classifiers.evaluate_mva(df, mva),
+                      cfg["selection"],
                       filename="{}mva_{}.root".format(cfg["root_dir"],
                                                       cfg["channel"]))
 

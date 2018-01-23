@@ -57,7 +57,7 @@ def makedirs(*paths):
                 raise
 
 
-def read_tree(root_file, tree):
+def read_tree(root_file, tree, selection=None):
     """
     Read a Ttree into a DataFrame
 
@@ -67,33 +67,15 @@ def read_tree(root_file, tree):
         Path of ROOT file to be read.
     tree : string
         Name of Ttree in root_file to be read.
+    selection : string, optional
+        ROOT selection string specifying cuts that should be made on read-in
+        tree. If None, no cuts are made.
 
     Returns
     -------
     df : DataFrame
         DataFrame containing data read in from tree.
     """
-
-    Z_MASS = 91.2
-    W_MASS = 80.4
-
-    # Compose selection string
-    selection = ""
-    if cfg["region"] == "all":
-        pass
-    elif cfg["region"] == "signal":
-        selection += "chi2<40&&"
-    elif cfg["region"] == "control":
-        selection += "chi2>40&&chi2<150&&"
-    else:
-        raise ValueError("Unrecogised value for option region: ",
-                         cfg["region"])
-
-    selection += "zMass>{}&&zMass<{}".format(Z_MASS - cfg["mz"],
-                                             Z_MASS + cfg["mz"]) + \
-        "&&wPairMass>{}&&wPairMass<{}".format(W_MASS - cfg["mw"],
-                                              W_MASS + cfg["mw"]) + \
-        "&&Channel=={}".format({"ee": 1, "mumu": 0}[cfg["channel"]])
 
     # Read ROOT trees into data frames
     try:
@@ -143,7 +125,7 @@ def balance_weights(w1, w2):
     return w1, w2
 
 
-def read_trees():
+def read_trees(selection=None):
     """
     Read in Ttrees.
 
@@ -154,7 +136,9 @@ def read_trees():
 
     Parameters
     ----------
-    None
+    selection : string, optional
+        ROOT selection string specifying cuts that should be made on read-in
+        trees. If None, no cuts are made.
 
     Returns
     -------
@@ -231,7 +215,7 @@ def read_trees():
         if process not in cfg["signals"] + cfg["backgrounds"]:
             continue
 
-        df = read_tree(root_file, "Ttree_{}".format(process))
+        df = read_tree(root_file, "Ttree_{}".format(process), selection)
 
         if df.empty:
             continue
@@ -385,8 +369,8 @@ def poisson_pseudodata(df, range=(0, 1)):
     return h
 
 
-def write_root(response_function, col_w="EvtWeight", range=(0, 1),
-               filename="mva.root"):
+def write_root(response_function, selection,
+               col_w="EvtWeight", range=(0, 1), filename="mva.root"):
     """
     Evaluate an MVA and write the result to TH1s in a ROOT file.
 
@@ -421,7 +405,7 @@ def write_root(response_function, col_w="EvtWeight", range=(0, 1),
         # Dedupe, the input files contain duplicates for some reason...
         for tree in unique_everseen(key.ReadObj().GetName()
                                     for key in fi.GetListOfKeys()):
-            df = read_tree(root_file, tree)
+            df = read_tree(root_file, tree, selection)
 
             if df.empty:
                 continue
