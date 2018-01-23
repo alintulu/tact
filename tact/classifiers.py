@@ -25,8 +25,6 @@ from collections import namedtuple
 import numpy as np
 from sklearn.pipeline import make_pipeline
 
-from tact.config import cfg
-
 np.random.seed(52)
 
 
@@ -62,7 +60,8 @@ def evaluate_mva(df, mva):
         return mva.predict_proba(df.as_matrix())[:, 1]
 
 
-def mlp(df_train, pre, y, sample_weight=None):
+def mlp(df_train, pre, y, serialized_model, sample_weight=None,
+        model_params={}, early_stopping_params=None, compile_params={}):
     """
     Train using a multi-layer perceptron (MLP).
 
@@ -75,8 +74,18 @@ def mlp(df_train, pre, y, sample_weight=None):
     y : array-like, shape = [n_training_samples]
         Target values (integers in classification, real numbers in regression).
         For classification, labels must correspond to classes.
+    serialized_model : dict
+        Keras model serialized as a dict.
     sample_weight : array-like, shape = [n_training_samples]
         Sample weights. If None, then samples are equally weighted.
+    model_params : dict
+        Keyword arguments passed to
+        keras.wrappers.scikit_learn.KerasClassifier.
+    early_stopping_params : dict
+        Keyword arguments passed to keras.callbacks.EarlyStopping. If None, no
+        early stopping mechanism is used.
+    compile_params : dict
+        Keyword arguments passed to keras.models.Sequential.compile.
 
     Returns
     -------
@@ -98,24 +107,23 @@ def mlp(df_train, pre, y, sample_weight=None):
         from keras.models import layer_module
 
         # Set input layer shape
-        cfg["mlp"]["model"]["config"][0]["config"]["batch_input_shape"] \
-            = (None, len(cfg["features"]))
+        serialized_model["config"][0]["config"]["batch_input_shape"] \
+            = (None, df_train.shape[1])
 
-        model = layer_module.deserialize(cfg["mlp"]["model"])
+        model = layer_module.deserialize(serialized_model)
 
-        model.compile(**cfg["mlp"]["compile_params"])
+        model.compile(**compile_params)
 
         return model
 
     from keras.wrappers.scikit_learn import KerasClassifier
 
     callbacks = []
-    if cfg["mlp"]["early_stopping"]:
+    if early_stopping_params is not None:
         from keras.callbacks import EarlyStopping
-        callbacks.append(EarlyStopping(**cfg["mlp"]["early_stopping_params"]))
+        callbacks.append(EarlyStopping(**early_stopping_params))
 
-    ann = KerasClassifier(build_fn=build_model,
-                          **cfg["mlp"]["model_params"])
+    ann = KerasClassifier(build_fn=build_model, **model_params)
 
     mva = make_pipeline(*(pre + [ann]))
 
@@ -140,7 +148,7 @@ def mlp(df_train, pre, y, sample_weight=None):
     return mva
 
 
-def bdt_ada(df_train, pre, y, sample_weight=None):
+def bdt_ada(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using an AdaBoosted decision tree.
 
@@ -155,6 +163,9 @@ def bdt_ada(df_train, pre, y, sample_weight=None):
         For classification, labels must correspond to classes.
     sample_weight : array-like, shape = [n_training_samples]
         Sample weights. If None, then samples are equally weighted.
+    kwargs : dict
+        Additional keyword arguments passed to
+        sklearn.ensemble.AdaBoostClassifier.
 
     Returns
     -------
@@ -166,8 +177,7 @@ def bdt_ada(df_train, pre, y, sample_weight=None):
     from sklearn.ensemble import AdaBoostClassifier
     from sklearn.tree import DecisionTreeClassifier
 
-    bdt = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(),
-                             **cfg["bdt_ada"])
+    bdt = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), **kwargs)
 
     mva = make_pipeline(*(pre + [bdt]))
 
@@ -176,7 +186,7 @@ def bdt_ada(df_train, pre, y, sample_weight=None):
     return mva
 
 
-def bdt_grad(df_train, pre, y, sample_weight=None):
+def bdt_grad(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using a gradient boosted decision tree using scikit-learn's
     internal implementation.
@@ -192,6 +202,9 @@ def bdt_grad(df_train, pre, y, sample_weight=None):
         For classification, labels must correspond to classes.
     sample_weight : array-like, shape = [n_training_samples]
         Sample weights. If None, then samples are equally weighted.
+    kwargs : dict
+        Additional keyword arguments passed to
+        sklearn.ensemble.GradientBoostingClassifier.
 
     Returns
     -------
@@ -202,7 +215,7 @@ def bdt_grad(df_train, pre, y, sample_weight=None):
 
     from sklearn.ensemble import GradientBoostingClassifier
 
-    bdt = GradientBoostingClassifier(**cfg["bdt_grad"])
+    bdt = GradientBoostingClassifier(**kwargs)
 
     mva = make_pipeline(*(pre + [bdt]))
 
@@ -212,7 +225,7 @@ def bdt_grad(df_train, pre, y, sample_weight=None):
     return mva
 
 
-def bdt_xgb(df_train, pre, y, sample_weight=None):
+def bdt_xgb(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using a gradient boosted decision tree with the XGBoost library.
 
@@ -227,6 +240,8 @@ def bdt_xgb(df_train, pre, y, sample_weight=None):
         For classification, labels must correspond to classes.
     sample_weight : array-like, shape = [n_training_samples]
         Sample weights. If None, then samples are equally weighted.
+    kwargs : dict
+        Additional keyword arguments passed to xgboost.XGBClassifier.
 
     Returns
     -------
@@ -241,7 +256,7 @@ def bdt_xgb(df_train, pre, y, sample_weight=None):
 
     from xgboost import XGBClassifier
 
-    bdt = XGBClassifier(**cfg["bdt_xgb"])
+    bdt = XGBClassifier(**kwargs)
 
     mva = make_pipeline(*(pre + [bdt]))
 
@@ -253,7 +268,7 @@ def bdt_xgb(df_train, pre, y, sample_weight=None):
     return mva
 
 
-def random_forest(df_train, pre, y, sample_weight=None):
+def random_forest(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using a random forest.
 
@@ -268,6 +283,8 @@ def random_forest(df_train, pre, y, sample_weight=None):
         For classification, labels must correspond to classes.
     sample_weight : array-like, shape = [n_training_samples]
         Sample weights. If None, then samples are equally weighted.
+    kwargs : dict
+        Additional keyword arguments passed to xgboost.XGBClassifier.
 
     Returns
     -------
@@ -278,7 +295,7 @@ def random_forest(df_train, pre, y, sample_weight=None):
 
     from sklearn.ensemble import RandomForestClassifier
 
-    rf = RandomForestClassifier(**cfg["random_forest"])
+    rf = RandomForestClassifier(**kwargs)
 
     mva = make_pipeline(*(pre + [rf]))
 
@@ -287,7 +304,7 @@ def random_forest(df_train, pre, y, sample_weight=None):
     return mva
 
 
-def save_classifier(mva, filename="mva"):
+def save_classifier(mva, cfg=None, filename="mva"):
     """
     Write a trained classifier pipeline and global configuration to an external
     file.
@@ -295,7 +312,9 @@ def save_classifier(mva, filename="mva"):
     Parameters
     ----------
     mva : trained classifier
-        Classifier to be trained
+        Classifier to be trained.
+    cfg : dict, optional
+        Classifier configuration.
     filename : string, optional
         Name of output file (including directory). Extension will be set
         automatically.
@@ -339,7 +358,8 @@ def load_classifier(f):
     mva: Pipeline
         Scikit-learn Pipeline containing full classifier stack.
     cfg:
-        Configuration associated with mva.
+        Configuration associated with mva. None if no configuration was
+        stored.
 
     Notes
     -----
