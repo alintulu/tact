@@ -14,6 +14,7 @@ from operator import sub
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
 
@@ -254,8 +255,7 @@ def make_roc_curve(mva_response_train, mva_response_test, y_train, y_test,
     fig.savefig(filename)
 
 
-def make_scatter_plot(df, col_x="MVA1", col_y="MVA2", col_w="EvtWeight",
-                      filename="scatter.pdf"):
+def make_scatter_plot(x, y, filename="scatter.pdf", **kwargs):
     """
     Plot the responses of two classifiers for every item in df on a scatter
     plot.
@@ -269,18 +269,14 @@ def make_scatter_plot(df, col_x="MVA1", col_y="MVA2", col_w="EvtWeight",
 
     Parameters
     ----------
-    df : DataFrame
-        DataFrame containing data to be displayed.
-    col_x : string, optional
-        Name of the column in df whose values should be used as the x-position
-        on the 2D plane.
-    col_y : string, optional
-        Name of the column in df whose values should be used as the y-position
-        on the 2D plane.
-    col_w : string, optional
-        Name of column in df containing event weights.
+    x : Series
+        Series containing x positions of observations
+    y : Series
+        Series containing y positions of observations
     filename : string, optional
         Name of the file the plot is saved to.
+    kwargs :
+        Keyword arguments passed to pandas.Dataframe.plot.scatter()
 
     Returns
     -------
@@ -291,20 +287,14 @@ def make_scatter_plot(df, col_x="MVA1", col_y="MVA2", col_w="EvtWeight",
 
     fig, ax = plt.subplots()
 
-    df.plot.scatter(
-        col_x, col_y, ax=ax, marker=',', s=df[col_w].abs(),
-        c=np.select([np.in1d(df.Process, cfg["mva1"]["signals"]),
-                     np.in1d(df.Process, cfg["mva1"]["backgrounds"])],
-                    ["#e24a33", "#8eba42"],
-                    default="#348abd"))
+    df = pd.concat([x, y], axis=1, copy=False)
+
+    df.plot.scatter(x.name, y.name, ax=ax, **kwargs)
 
     fig.savefig(filename)
 
 
-def make_kmeans_cluster_plots(df, km, col_x="MVA1", col_y="MVA2",
-                              col_label="kmean", col_w="EvtWeight",
-                              filename1="kmeans_areas.pdf",
-                              filename2="kmeans_clusters.pdf"):
+def make_cluster_region_plot(c, filename="kmeans_areas.pdf", **kwargs):
     """
     Plot the result of k-means clustering. This produces a scatter plot similar
     to make_scatter_plot but colour-coded by cluster and a plot showing
@@ -312,20 +302,18 @@ def make_kmeans_cluster_plots(df, km, col_x="MVA1", col_y="MVA2",
 
     Parameters
     ----------
+    c
+        Trained clusterer. Must implement .predict().
     df : DataFrame
         DataFrame containing data to be displayed.
-    km
-        Trained k-means classifier
-    col_x : string, optional
-        Name of column in df containing observations for the x-axis.
-    col_y : string, optional
-        Name of column in df containing observations for the y-axis.
-    col_label : string, optional
-        Name of column in df containing cluster labels.
-    col_w : string, optional
-        Name of column in df containing sample weights.
-    filename1, filename2 : string, optional
-        Name of the files the plots are saved to.
+    x : Series
+        Series containing x positions of observations
+    y : Series
+        Series containing y positions of observations
+    filename : string, optional
+        Name of the file the plot is saved to.
+    kwargs :
+        Keyword arguments passed to matplotlib.pyplot.imshow
 
     Returns
     -------
@@ -333,7 +321,7 @@ def make_kmeans_cluster_plots(df, km, col_x="MVA1", col_y="MVA2",
     """
 
     # First plot shows the full extent of each cluster
-    fig1, ax1 = plt.subplots()
+    fig, ax = plt.subplots()
 
     x_min = 0
     x_max = 1
@@ -343,23 +331,13 @@ def make_kmeans_cluster_plots(df, km, col_x="MVA1", col_y="MVA2",
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                          np.arange(y_min, y_max, h))
 
-    Z = km.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = c.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
 
-    ax1.imshow(Z, interpolation='nearest',
-               extent=(xx.min(), xx.max(), yy.min(), yy.max()),
-               cmap="tab20",
-               aspect='auto', origin='lower')
+    ax.imshow(Z, interpolation='nearest',
+              extent=(xx.min(), xx.max(), yy.min(), yy.max()),
+              aspect='auto', origin='lower', **kwargs)
 
-    ax1.grid(False)
+    ax.grid(False)
 
-    fig1.savefig(filename1)
-
-    # Second plot shows the usual 2D scatter plot, but colour is based on
-    # cluster membership
-    fig2, ax2 = plt.subplots()
-
-    df.plot.scatter(col_x, col_y, marker=",", c=col_label, ax=ax2,
-                    s=df[col_w].abs(), cmap="tab20", colorbar=False)
-
-    fig2.savefig(filename2)
+    fig.savefig(filename)

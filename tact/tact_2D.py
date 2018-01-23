@@ -15,7 +15,8 @@ import sys
 
 import numpy as np
 
-from tact import classifiers, plotting, rootIO
+from tact import classifiers, rootIO
+from tact import plotting as pt
 from tact.config import cfg, read_config
 
 
@@ -53,8 +54,17 @@ def main():
                                                  mva2))
 
     # Plot classifier responses on 2D plane
-    plotting.make_scatter_plot(df, filename="{}scatter_{}.pdf"
-                               .format(cfg["plot_dir"], cfg["channel"]))
+    process_status = df.Process.map(
+        lambda process: ((process in cfg["mva1"]["signals"],
+                          process in cfg["mva2"]["signals"]),
+                         (process in cfg["mva1"]["backgrounds"],
+                          process in cfg["mva2"]["backgrounds"])))
+
+    pt.make_scatter_plot(df["MVA1"], df["MVA2"], s=df["EvtWeight"].abs(),
+                         c=process_status.map(hash), cmap="Dark2",
+                         marker=",", colorbar=False,
+                         filename="{}scatter_{}.pdf"
+                         .format(cfg["plot_dir"], cfg["channel"]))
 
     # Combine classifier scores
     if cfg["combination"] == "min":
@@ -125,12 +135,14 @@ def main():
         range = (0, n_clusters)
         cfg["root_out"]["bins"] = n_clusters
 
-        plotting.make_kmeans_cluster_plots(
-            df, km,
-            filename1="{}kmeans_areas_{}.pdf"
-            .format(cfg["plot_dir"], cfg["channel"]),
-            filename2="{}kmeans_clusters_{}.pdf"
-            .format(cfg["plot_dir"], cfg["channel"]))
+        pt.make_cluster_region_plot(km, cmap="tab20",
+                                    filename="{}kmeans_clusters_{}.pdf"
+                                    .format(cfg["plot_dir"], cfg["channel"]))
+        pt.make_scatter_plot(df.MVA1, df.MVA2, marker=",", c=df.kmean,
+                             s=df.EvtWeight.abs(), cmap="tab20",
+                             colorbar=False,
+                             filename="{}kmeans_areas_{}.pdf"
+                             .format(cfg["plot_dir"], cfg["channel"]))
     else:
         raise ValueError("Unrecogised value for option 'combination': ",
                          cfg["combination"])
