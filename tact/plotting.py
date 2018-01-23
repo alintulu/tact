@@ -18,8 +18,6 @@ import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
 
-from tact.config import cfg
-
 
 def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
                              filename="vars.pdf", **kwargs):
