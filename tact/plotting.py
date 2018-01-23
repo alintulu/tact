@@ -21,8 +21,8 @@ from sklearn.metrics import auc, roc_curve
 from tact.config import cfg
 
 
-def make_variable_histograms(df_sig, df_bkg,
-                             w_sig=None, w_bkg=None, filename="vars.pdf"):
+def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
+                             filename="vars.pdf", **kwargs):
     """
     Produce histograms comparing the distribution of data in df_sig and df_bkg.
 
@@ -42,6 +42,8 @@ def make_variable_histograms(df_sig, df_bkg,
         weighted.
     filename : string, optional
         Name of the file the plot is saved to.
+    kwargs :
+        Additional kwargs passed to pandas.DataFrame.hist
 
     Returns
     -------
@@ -51,7 +53,7 @@ def make_variable_histograms(df_sig, df_bkg,
     def plot_histograms(df, ax, w=None):
         """Plot histograms for every column in df"""
         return df.hist(bins=42, ax=ax, alpha=0.5, weights=w,
-                       normed=True)
+                       normed=True, **kwargs)
 
     n_histograms = len(df_sig.columns)
 
@@ -81,7 +83,7 @@ def make_variable_histograms(df_sig, df_bkg,
     fig.savefig(filename)
 
 
-def make_corelation_plot(df, filename="corr.pdf"):
+def make_corelation_plot(df, filename="corr.pdf", **kwargs):
     """
     Produce matshow plot representing the correlation matrix of df.
 
@@ -94,6 +96,8 @@ def make_corelation_plot(df, filename="corr.pdf"):
         be calculated.
     filename : string, optional
         Name of the file the plot is saved to.
+    kwargs
+        Additional kwargs passed to matplotlib.pyplot.matshow
 
     Returns
     -------
@@ -106,7 +110,7 @@ def make_corelation_plot(df, filename="corr.pdf"):
     nvars = len(corr.columns)
 
     fig, ax = plt.subplots()
-    ms = ax.matshow(corr, vmin=-1, vmax=1)
+    ms = ax.matshow(corr, vmin=-1, vmax=1, **kwargs)
 
     fig.set_size_inches(1 + nvars / 1.5, 1 + nvars / 1.5)
     plt.xticks(xrange(nvars), corr.columns, rotation=90)
@@ -275,7 +279,7 @@ def make_scatter_plot(x, y, filename="scatter.pdf", **kwargs):
         Series containing y positions of observations
     filename : string, optional
         Name of the file the plot is saved to.
-    kwargs :
+    kwargs
         Keyword arguments passed to pandas.Dataframe.plot.scatter()
 
     Returns
