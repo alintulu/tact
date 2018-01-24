@@ -41,7 +41,11 @@ def main():
                                cfg["mva2"]["features"]))
 
     # Read TTrees and evaluate classifiers
-    df = rootIO.read_trees()
+    df = rootIO.read_trees(
+        cfg["input_dir"], cfg["features"], cfg["signals"], cfg["backgrounds"],
+        selection=cfg["selection"],
+        negative_weight_treatment=cfg["negative_weight_treatment"],
+        equalise_signal=cfg["equalise_signal"])
     df = df.assign(MVA1=classifiers.evaluate_mva(df[cfg["mva1"]["features"]],
                                                  mva1))
     df = df.assign(MVA2=classifiers.evaluate_mva(df[cfg["mva2"]["features"]],
@@ -147,7 +151,11 @@ def main():
         raise ValueError("Unrecogised value for option 'combination': ",
                          cfg["combination"])
 
-    rootIO.write_root(response, range=range,
+    rootIO.write_root(cfg["input_dir"], cfg["features"], response,
+                      selection=cfg["selection"], bins=cfg["root_out"]["bins"],
+                      range=range, combine=cfg["root_out"]["combine"],
+                      drop_nan=cfg["root_out"]["drop_nan"],
+                      channel=cfg["channel"],
                       filename="{}mva_{}.root".format(cfg["root_dir"],
                                                       cfg["channel"]))
 

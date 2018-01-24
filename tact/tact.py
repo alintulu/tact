@@ -32,7 +32,11 @@ def main():
     rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
 
     # Read samples
-    df = rootIO.read_trees(cfg["selection"])
+    df = rootIO.read_trees(
+        cfg["input_dir"], cfg["features"], cfg["signals"], cfg["backgrounds"],
+        selection=cfg["selection"],
+        negative_weight_treatment=cfg["negative_weight_treatment"],
+        equalise_signal=cfg["equalise_signal"])
 
     features = cfg["features"]
 
@@ -67,19 +71,29 @@ def main():
 
     # Classify
     if cfg["classifier"] == "mlp":
-        mva = classifiers.mlp(df_train[features], pre, df_train.Signal,
-                              sample_weight=df_train.MVAWeight)
+        mva = classifiers.mlp(
+            df_train[features], pre, df_train.Signal, cfg["mlp"]["model"],
+            sample_weight=df_train.MVAWeight,
+            model_params=cfg["mlp"]["model_params"],
+            early_stopping_params=cfg["mlp"].get("early_stopping_params"),
+            compile_params=cfg["mlp"]["compile_params"])
     elif cfg["classifier"] == "bdt_ada":
         mva = classifiers.bdt_ada(df_train[features], pre, df_train.Signal,
-                                  sample_weight=df_train.MVAWeight)
+                                  sample_weight=df_train.MVAWeight,
+                                  **cfg["bdt_ada"])
     elif cfg["classifier"] == "bdt_xgb":
         mva = classifiers.bdt_xgb(df_train[features], pre, df_train.Signal,
-                                  sample_weight=df_train.MVAWeight)
+                                  sample_weight=df_train.MVAWeight,
+                                  **cfg["bdt_xgb"])
     elif cfg["classifier"] == "bdt_grad":
         mva = classifiers.bdt_grad(df_train[features], pre, df_train.Signal,
-                                   sample_weight=df_train.MVAWeight)
+                                   sample_weight=df_train.MVAWeight,
+                                   **cfg["bdt_grad"])
     elif cfg["classifier"] == "random_forest":
-        mva = classifiers.random_forest(df_train, pre)
+        mva = classifiers.random_forest(df_train[features], pre,
+                                        df_train.Signal,
+                                        sample_weight=df_train.MVAWeight,
+                                        **cfg["random_forest"])
 
     df_test = df_test.assign(MVA=classifiers.evaluate_mva(df_test[features],
                                                           mva))
@@ -87,9 +101,9 @@ def main():
                                                             mva))
 
     # Save trained classifier
-    classifiers.save_classifier(mva, "{}{}_{}".format(cfg["mva_dir"],
-                                                      cfg["classifier"],
-                                                      cfg["channel"]))
+    classifiers.save_classifier(mva, cfg, "{}{}_{}".format(cfg["mva_dir"],
+                                                           cfg["classifier"],
+                                                           cfg["channel"]))
 
     # Metrics
     metrics.print_metrics(mva, df_train[features], df_test[features],
@@ -113,10 +127,13 @@ def main():
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
-    rootIO.write_root(lambda df: classifiers.evaluate_mva(df, mva),
-                      cfg["selection"],
-                      filename="{}mva_{}.root".format(cfg["root_dir"],
-                                                      cfg["channel"]))
+    rootIO.write_root(
+        cfg["input_dir"], cfg["features"],
+        lambda df: classifiers.evaluate_mva(df[features], mva),
+        selection=cfg["selection"], bins=cfg["root_out"]["bins"],
+        combine=cfg["root_out"]["combine"],
+        drop_nan=cfg["root_out"]["drop_nan"], channel=cfg["channel"],
+        filename="{}mva_{}.root".format(cfg["root_dir"], cfg["channel"]))
 
 
 if __name__ == "__main__":
