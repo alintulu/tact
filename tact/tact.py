@@ -48,6 +48,8 @@ def main():
                 preprocessing.add_robust_scaler(pre, **p["config"])
             if p["preprocessor"] == "standard_scaler":
                 preprocessing.add_standard_scaler(pre, **p["config"])
+            if p["preprocessor"] == "PCA":
+                preprocessing.add_PCA(pre, **p["config"])
     except KeyError:
         pass
 

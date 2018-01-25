@@ -51,3 +51,25 @@ def add_robust_scaler(l, **kwargs):
     from sklearn.preprocessing import RobustScaler
 
     return l.append(RobustScaler(**kwargs))
+
+
+def add_PCA(l, **kwargs):
+    """
+    Appends a scikit-learn PCA decompositor to l.
+
+    Parameters
+    ----------
+    l : list
+        Pipeline to be modified
+    kwargs : keyword arguments
+        Keyword arguments to be passed to RobustScaler()
+
+    Returns
+    -------
+    list
+        Modified list
+    """
+
+    from sklearn.decomposition import PCA
+
+    return l.append(PCA(**kwargs))
