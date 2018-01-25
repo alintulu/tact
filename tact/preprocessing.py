@@ -8,8 +8,6 @@ which can later be transformed into a scikit-learn Pipeline.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from sklearn.preprocessing import RobustScaler, StandardScaler
-
 
 def add_standard_scaler(l, **kwargs):
     """
@@ -27,6 +25,8 @@ def add_standard_scaler(l, **kwargs):
     list
         Modified list
     """
+
+    from sklearn.preprocessing import StandardScaler
 
     return l.append(StandardScaler(**kwargs))
 
@@ -47,5 +47,7 @@ def add_robust_scaler(l, **kwargs):
     list
         Modified list
     """
+
+    from sklearn.preprocessing import RobustScaler
 
     return l.append(RobustScaler(**kwargs))
