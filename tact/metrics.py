@@ -83,13 +83,13 @@ def print_metrics(mva, df_train, df_test,
     print("Signal:")
     print(ks_2samp(mva_response_train[y_train == 1],
                    mva_response_test[y_test == 1],
-                   w_train[y_train == 1],
-                   w_test[y_test == 1])[1])
+                   None if w_train is None else w_train[y_train == 1],
+                   None if w_test is None else w_test[y_test == 1])[1])
     print("Background:")
     print(ks_2samp(mva_response_train[y_train == 0],
                    mva_response_test[y_test == 0],
-                   w_train[y_train == 0],
-                   w_test[y_test == 0])[1])
+                   None if w_train is None else w_train[y_train == 0],
+                   None if w_test is None else w_test[y_test == 0])[1])
     print()
 
     if hasattr(mva, "feature_importances_"):
