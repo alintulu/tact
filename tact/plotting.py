@@ -55,8 +55,6 @@ def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
 
     n_histograms = len(df_sig.columns)
 
-    plt.style.use("ggplot")
-
     ncols = 2
     nrows = n_histograms // ncols + 1
 
@@ -101,8 +99,6 @@ def make_corelation_plot(df, filename="corr.pdf", **kwargs):
     -------
     None
     """
-
-    plt.style.use("ggplot")
 
     corr = df.corr()
     nvars = len(corr.columns)
@@ -155,8 +151,6 @@ def make_response_plot(x_train_sig, x_test_sig, x_train_bkg, x_test_bkg,
     filename : string, optional
         Name of the file the plot is saved to.
     """
-
-    plt.style.use("ggplot")
 
     x_range = (0, 1)
 
@@ -237,8 +231,6 @@ def make_roc_curve(mva_response_train, mva_response_test, y_train, y_test,
                                       sample_weight=x["w"])
         roc_auc[i] = auc(fpr[i], tpr[i], reorder=True)
 
-    plt.style.use("ggplot")
-
     fig, ax = plt.subplots()
 
     for i in fpr:
@@ -284,8 +276,6 @@ def make_scatter_plot(x, y, filename="scatter.pdf", **kwargs):
     -------
     None
     """
-
-    plt.style.use("ggplot")
 
     fig, ax = plt.subplots()
 

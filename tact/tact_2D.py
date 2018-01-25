@@ -13,7 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 
-import numpy as np
+import matplotlib.pyplot as plt
 
 from tact import classifiers, rootIO
 from tact import plotting as pt
@@ -27,6 +27,13 @@ def main():
     except IndexError:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
+
+    try:
+        import numpy as np
+        np.random.seed(cfg["seed"])
+    except KeyError:
+        pass
+    plt.style.use("ggplot")
 
     # Make ouptut directories
     rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
