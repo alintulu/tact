@@ -32,17 +32,14 @@ pip install -e .[xgboost]
 
 ### Usage
 
-This tool is used via the `tact` and `tact_2D` command-line utilities. Both
-take only one argument - a YAML configuration file, well-documented examples
-of which can be found in the "configs/" directory. Alternatively, the `--stdin`
-argument can be specified to read a configuration file from stdin.
+This tool is used via the `tact`  command-line utility. It takes only one
+argument - a YAML configuration file, well-documented examples of which can be
+found in the "configs/" directory. Alternatively, the `--stdin` argument can be
+specified to read a configuration file from stdin.
 
 `tact` performs multivariate classifier training and application, producing
 files which can then be used in THETA or the Higgs Analysis Combined Limit
 tools. It should be the only program needed for most use-cases.
-
-`tact_2D` performs dimensionality reduction for two classifiers trained and
-and saved by the `tact` program.
 
 ### Authors
 + Corin Hoad
