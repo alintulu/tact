@@ -105,6 +105,9 @@ def main():
                                         **cfg["random_forest"])
     elif cfg["classifier"] == "load":
         mva = classifiers.load_classifier(open(cfg["classifier_path"]))[0]
+    else:
+        raise ValueError("Unrecognised value for option 'classifier': ",
+                         cfg["classifier"])
 
     df_test = df_test.assign(MVA=classifiers.evaluate_mva(df_test[features],
                                                           mva))
