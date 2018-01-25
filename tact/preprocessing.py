@@ -18,7 +18,7 @@ def add_standard_scaler(l, **kwargs):
     l : list
         Pipeline to be modified
     kwargs : keyword arguments
-        Keyword arguments to be passed to StandardScaler()
+        Keyword arguments to be passed to sklearn.preprocessing.StandardScaler.
 
     Returns
     -------
@@ -40,7 +40,7 @@ def add_robust_scaler(l, **kwargs):
     l : list
         Pipeline to be modified
     kwargs : keyword arguments
-        Keyword arguments to be passed to RobustScaler()
+        Keyword arguments to be passed to sklearn.preprocessing.RobustScaler.
 
     Returns
     -------
