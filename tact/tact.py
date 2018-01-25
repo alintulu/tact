@@ -96,6 +96,8 @@ def main():
                                         df_train.Signal,
                                         sample_weight=df_train.MVAWeight,
                                         **cfg["random_forest"])
+    elif cfg["classifier"] == "load":
+        mva = classifiers.load_classifier(open(cfg["classifier_path"]))[0]
 
     df_test = df_test.assign(MVA=classifiers.evaluate_mva(df_test[features],
                                                           mva))
