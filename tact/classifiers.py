@@ -25,9 +25,6 @@ from collections import namedtuple
 import numpy as np
 from sklearn.pipeline import make_pipeline
 
-np.random.seed(52)
-
-
 def evaluate_mva(df, mva):
     """
     Evaluate the response of a trained classifier.

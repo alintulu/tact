@@ -13,6 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 from tact import plotting as pt
@@ -27,6 +28,11 @@ def main():
     except IndexError:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
+
+    try:
+        np.random.seed(cfg["seed"])
+    except KeyError:
+        pass
 
     # Make ouptut directories
     rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
@@ -68,8 +74,7 @@ def main():
                             .format(cfg["plot_dir"], cfg["channel"]))
 
     # Split sample
-    df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"],
-                                         random_state=52)
+    df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"])
 
     # Classify
     if cfg["classifier"] == "mlp":
