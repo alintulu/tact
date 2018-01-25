@@ -22,8 +22,8 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 from collections import namedtuple
 
-import numpy as np
 from sklearn.pipeline import make_pipeline
+
 
 def evaluate_mva(df, mva):
     """

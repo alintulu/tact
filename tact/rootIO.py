@@ -506,7 +506,6 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
             fo.cd()
             h.Write()
 
-
     h = ROOT.TH1D()
     h.Sumw2()
     if data == "poisson":
