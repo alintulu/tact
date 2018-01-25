@@ -173,7 +173,7 @@ def make_response_plot(x_train_sig, x_test_sig, x_train_bkg, x_test_bkg,
         hist, bin_edges = np.histogram(x, bins=bins, range=x_range,
                                        weights=w)
         hist2 = np.histogram(x, bins=bins, range=x_range,
-                             weights=w.pow(2))[0]
+                             weights=w ** 2)[0]
         db = np.array(np.diff(bin_edges), float)
         yerr = np.sqrt(hist2) / db / hist.sum()
         hist = hist / db / hist.sum()

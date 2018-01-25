@@ -365,7 +365,7 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     contents = np.histogram(x, bins=bins, range=range,
                             weights=w)[0]
     errors, bin_edges = np.histogram(x, bins=bins, range=range,
-                                     weights=np.power(w, 2))
+                                     weights=w ** 2)
     errors = np.sqrt(errors)
 
     h = ROOT.TH1D(name, title, len(bin_edges) - 1, bin_edges)
