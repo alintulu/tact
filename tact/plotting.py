@@ -50,8 +50,7 @@ def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
 
     def plot_histograms(df, ax, w=None):
         """Plot histograms for every column in df"""
-        return df.hist(bins=42, ax=ax, alpha=0.5, weights=w,
-                       normed=True, **kwargs)
+        return df.hist(ax=ax, alpha=0.5, weights=w, normed=True, **kwargs)
 
     n_histograms = len(df_sig.columns)
 
