@@ -154,8 +154,9 @@ def main():
     rootIO.write_root(cfg["input_dir"], cfg["features"], response,
                       selection=cfg["selection"], bins=cfg["root_out"]["bins"],
                       range=range, combine=cfg["root_out"]["combine"],
+                      data=cfg["root_out"]["data"],
                       drop_nan=cfg["root_out"]["drop_nan"],
-                      channel=cfg["channel"],
+                      channel=cfg["channel"], data_process=cfg["data_process"],
                       filename="{}mva_{}.root".format(cfg["root_dir"],
                                                       cfg["channel"]))
 

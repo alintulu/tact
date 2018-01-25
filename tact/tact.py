@@ -131,8 +131,9 @@ def main():
         cfg["input_dir"], cfg["features"],
         lambda df: classifiers.evaluate_mva(df[features], mva),
         selection=cfg["selection"], bins=cfg["root_out"]["bins"],
-        combine=cfg["root_out"]["combine"],
-        drop_nan=cfg["root_out"]["drop_nan"], channel=cfg["channel"],
+        data=cfg["root_out"]["data"], combine=cfg["root_out"]["combine"],
+        data_process=cfg["data_process"], drop_nan=cfg["root_out"]["drop_nan"],
+        channel=cfg["channel"],
         filename="{}mva_{}.root".format(cfg["root_dir"], cfg["channel"]))
 
 

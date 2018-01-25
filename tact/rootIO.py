@@ -411,7 +411,8 @@ def poisson_pseudodata(df, bins=20, range=(0, 1)):
 
 def write_root(input_dir, features, response_function, selection=None, bins=20,
                range=(0, 1), drop_nan=False, data="empty", combine=True,
-               channel="all", branch_w="EvtWeight", filename="mva.root"):
+               channel="all", branch_w="EvtWeight", data_process=None,
+               filename="mva.root"):
     """
     Evaluate an MVA and write the result to TH1s in a ROOT file.
 
@@ -436,11 +437,12 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
     drop_nan : bool, optional
         Controls w`Vhether events with NaN event weights should be preserved
         (the default) or dropped.
-    data : "empty" or "poisson", optional
+    data : "empty", "poisson", or "true", optional
         What form the (pseudo)-data in the output ROOT files should take
             empty: Empty histograms (default).
             poisson: Sum the Monte Carlo histograms, and perform a Poisson
                      jump on each bin.
+            real: Use the real data.
     combine : bool, optional
         If True (the default), TH1 names are formatted to be compatible with
         the Higgs Analysis Combined Limit Tool. Else, the names are compatible
@@ -449,6 +451,9 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
         The name of the channel. Used in naming the resulting TH1s only.
     branch_w : string, optional
         Name of branch containing event weights in ROOT files.
+    data_process : string, optional
+        Name of "process" which contains real data. Will be ignored in poisson
+        pseudodata generation and used as the data histogram if data="real".
     filename : string, optional
         Name of the output root file (including directory).
 
@@ -461,7 +466,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
 
     fo = ROOT.TFile(filename, "RECREATE")
     pseudo_dfs = []  # list of dataframes we'll turn into pseudodata
-    data_name = "DataEG" if channel == "ee" else "DataMu"
+
+    h_data = ROOT.TH1F()
 
     for root_file in root_files:
         fi = ROOT.TFile(root_file, "READ")
@@ -485,18 +491,21 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
                 if drop_nan:
                     df = df[pd.notnull(df[branch_w])]
 
-            # Trees used in pseudodata should be not systematics and not data
-            if not re.search(r"(minus)|(plus)|({})$".format(data_name), tree):
-                pseudo_dfs.append(df)
-
             tree = _format_TH1_name(tree, combine=combine, channel=channel)
             h = col_to_TH1(df.MVA, w=df[branch_w],
                            bins=bins, name=tree, title=tree, range=range)
+
+            # Trees used in pseudodata should be not systematics and not data
+            if data_process is not None and \
+                    re.search(r"{}$".format(data_process), tree):
+                h_data = h.Clone()
+            elif not re.search(r"(minus)|(plus)$", tree):
+                pseudo_dfs.append(df)
+
             h.SetDirectory(fo)
             fo.cd()
             h.Write()
 
-    data_process = "data_obs" if combine else "DATA"
 
     h = ROOT.TH1D()
     h.Sumw2()
@@ -504,10 +513,12 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
         h = poisson_pseudodata(pd.concat(pseudo_dfs), bins=bins, range=range)
     elif data == "empty":
         h = ROOT.TH1D()
+    elif data == "real":
+        h = h_data
     else:
         raise ValueError("Unrecogised value for option 'data': ", data)
 
-    h.SetName("MVA_{}__{}".format(channel, data_process))
+    h.SetName("MVA_{}__{}".format(channel, "data_obs" if combine else "DATA"))
     h.SetDirectory(fo)
     fo.cd()
     h.Write()
