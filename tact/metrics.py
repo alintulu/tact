@@ -210,7 +210,7 @@ def ks_2samp(a, b, aw=None, bw=None):
 
     ab = np.sort(np.concatenate((a, b)))
 
-    D = np.max(np.absolute(ecdf(a, aw)(ab) - ecdf(b, bw)(ab)))
+    D = np.max(np.abs(ecdf(a, aw)(ab) - ecdf(b, bw)(ab)))
 
     n1 = len(a) if aw is None else np.sum(aw) ** 2 / np.sum(aw ** 2)
     n2 = len(b) if bw is None else np.sum(bw) ** 2 / np.sum(bw ** 2)
