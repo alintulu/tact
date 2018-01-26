@@ -40,6 +40,12 @@ def main():
     mva2, cfg["mva2"] = classifiers.load_classifier(open(cfg["classifier2"],
                                                          "rb"))
 
+    if cfg["mva1"] is None or cfg["mva2"] is None:
+        print("Error, configuration not saved with one of the provided "
+              "classifiers, this is required for usage of this tool.",
+              file=sys.stderr)
+        sys.exit(2)
+
     cfg["features"] = list(set(cfg["mva1"]["features"] +
                                cfg["mva2"]["features"]))
 
