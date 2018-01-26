@@ -335,13 +335,13 @@ def _format_TH1_name(name, combine=True, channel="all"):
 
 def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     """
-    Write data in col_x to a TH1
+    Write data in x to a TH1.
 
     Parameters
     ----------
-    x : Series
+    x : array-like
         Data to be binned.
-    w : Series
+    w : array-like
         Weights. If None, then samples are equally weighted.
     name : string, optional
         Name of TH1.
@@ -364,6 +364,11 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     the final histogram. This should not affect the expected significance as
     the weighted contents and error of each bin is preserved.
     """
+
+    # TODO: return TH1I if weights are integers
+
+    if w is None:
+        w = np.ones(len(x))
 
     contents = np.histogram(x, bins=bins, range=range,
                             weights=w)[0]

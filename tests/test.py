@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
 import unittest
 
 import numpy as np
+import ROOT
 
 from context import tact
 from tact import rootIO
@@ -174,6 +175,85 @@ class TH1NameFormatTests(unittest.TestCase):
         bad_name = "waerstftyj"
         self.assertRaises(ValueError, rootIO._format_TH1_name, bad_name)
         self.assertRaises(ValueError, rootIO._format_TH1_name, "")
+
+
+class ColToTH1Tests(unittest.TestCase):
+    """
+    Tests for rootIO.col_to_TH1
+    """
+
+    def setUp(self):
+        self.a = np.random.rand(1000)
+        self.w = np.random.rand(1000) - 0.25
+
+    def test_returns_TH1D_without_weights(self):
+        """
+        Ensures a TH1D is returned when no weights are provided.
+        """
+        self.assertIsInstance(rootIO.col_to_TH1(self.a), ROOT.TH1D)
+
+    def test_returns_TH1D_with_weights(self):
+        """
+        Ensures a TH1D is returned when weights are provided.
+        """
+        self.assertIsInstance(rootIO.col_to_TH1(self.a, w=self.w), ROOT.TH1D)
+
+    def test_bin_totals_preserved_without_weights(self):
+        """
+        Check the bin totals are unchanged when no weights are provided.
+        """
+        bins = 20
+        bin_range = (0, 1)
+        hist, _ = np.histogram(self.a, bins=bins, range=bin_range)
+        h = rootIO.col_to_TH1(self.a, bins=bins, range=bin_range)
+        for i in range(0, bins):
+            self.assertEqual(hist[i], h.GetBinContent(i + 1))
+
+    def test_bin_totals_preserved_with_weights(self):
+        """
+        Check the bin totals are unchanged when weights are provided.
+        """
+        bins = 20
+        bin_range = (0, 1)
+        hist, _ = np.histogram(self.a, bins=bins, weights=self.w,
+                               range=bin_range)
+        h = rootIO.col_to_TH1(self.a, bins=bins, w=self.w, range=bin_range)
+        for i in range(0, bins):
+            self.assertEqual(hist[i], h.GetBinContent(i + 1))
+
+    def test_poisson_weights(self):
+        """
+        Check errors are poissonian if entries are unweighted.
+        """
+        bins = 20
+        bin_range = (0, 1)
+        hist, _ = np.histogram(self.a, bins=bins, range=bin_range)
+        h = rootIO.col_to_TH1(self.a, bins=bins, range=bin_range)
+        for i in range(0, bins):
+            self.assertEqual(np.sqrt(hist[i]), h.GetBinError(i + 1))
+
+    def test_sum_square_weights(self):
+        """
+        Check errors are the square root of the sum of the square weights if
+        entries are weighted.
+        """
+        bins = 20
+        bin_range = (0, 1)
+        histerror, _ = np.histogram(self.a, bins=bins, weights=self.w ** 2,
+                                    range=bin_range)
+        h = rootIO.col_to_TH1(self.a, bins=bins, w=self.w, range=bin_range)
+        for i in range(0, bins):
+            self.assertEqual(np.sqrt(histerror[i]), h.GetBinError(i + 1))
+
+    def test_empty(self):
+        """
+        Test if an empty histogram is returned with empty input.
+        """
+        bins = 20
+        h = rootIO.col_to_TH1(np.array([]), bins=20)
+        self.assertIsInstance(h, ROOT.TH1D)
+        self.assertEqual(sum(h.GetBinContent(i) for i in range(1, bins + 1)),
+                         0)
 
 
 if __name__ == "__main__":
