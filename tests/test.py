@@ -117,5 +117,64 @@ class ReweightTests(unittest.TestCase):
         self.assertRaises(ValueError, rootIO.reweight, np.array([]))
 
 
+class TH1NameFormatTests(unittest.TestCase):
+    """
+    Tests for rootIO._format_TH1_name
+    """
+
+    def setUp(self):
+        self.name = "Ttree_PROCESS"
+        self.name_up = "Ttree_PROCESS__SYSTEMATIC__plus"
+        self.name_down = "Ttree_PROCESS__SYSTEMATIC__minus"
+
+    def test_rename(self):
+        """
+        Test non-systematic histograms are renamed correctly.
+        """
+        self.assertEqual("MVA_all__PROCESS",
+                         rootIO._format_TH1_name(self.name))
+
+    def test_rename_systematic_up_combine(self):
+        """
+        Test systematic histograms for 1σ variations up are renamed correctly
+        for combine.
+        """
+        self.assertEqual("MVA_all__PROCESS__SYSTEMATICUp",
+                         rootIO._format_TH1_name(self.name_up))
+
+    def test_rename_systematic_up_combine(self):
+        """
+        Test systematic histograms for 1σ variations down are renamed correctly
+        for combine.
+        """
+        self.assertEqual("MVA_all__PROCESS__SYSTEMATICDown",
+                         rootIO._format_TH1_name(self.name_down))
+
+    def test_rename_systematic_up_THETA(self):
+        """
+        Test systematic histograms for 1σ variations up are renamed correctly
+        for THETA.
+        """
+        self.assertEqual("MVA_all__PROCESS__SYSTEMATIC__plus",
+                         rootIO._format_TH1_name(self.name_up, combine=False))
+
+    def test_rename_systematic_up_THETA(self):
+        """
+        Test systematic histograms for 1σ variations down are renamed correctly
+        for THETA.
+        """
+        self.assertEqual("MVA_all__PROCESS__SYSTEMATIC__minus",
+                         rootIO._format_TH1_name(self.name_down,
+                                                 combine=False))
+
+    def test_raises_on_bad_name(self):
+        """
+        Test a ValueError is raised if the name is unchanged.
+        """
+        bad_name = "waerstftyj"
+        self.assertRaises(ValueError, rootIO._format_TH1_name, bad_name)
+        self.assertRaises(ValueError, rootIO._format_TH1_name, "")
+
+
 if __name__ == "__main__":
     unittest.main()

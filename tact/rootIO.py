@@ -312,20 +312,25 @@ def _format_TH1_name(name, combine=True, channel="all"):
     Notes
     -----
     The input name is expected to be in the format:
-        Ttree__$PROCESS
+        Ttree_$PROCESS
     for each process and raw data or
-        Ttree__$PROCESS__$SYSTEMATIC__$PLUSMINUS
+        Ttree_$PROCESS__$SYSTEMATIC__$PLUSMINUS
     for systematics where $PLUSMINUS is plus for 1σ up and minus for 1σ down.
-    Ttree is replaced with MVA_$CHANNEL_ and __plus/__minus to Up/Down if the
+    Ttree is replaced with MVA_$CHANNEL and __plus/__minus to Up/Down if the
     combine flag is set.
     """
 
-    name = re.sub(r"^Ttree", "MVA_{}_".format(channel), name)
+    new_name = re.sub(r"^Ttree", "MVA_{}_".format(channel), name)
     if combine:
-        name = re.sub(r"__plus$", "Up", name)
-        name = re.sub(r"__minus$", "Down", name)
+        new_name = re.sub(r"__plus$", "Up", new_name)
+        new_name = re.sub(r"__minus$", "Down", new_name)
 
-    return name
+    if name == new_name:
+        raise ValueError("New histogram name ", new_name,
+                         "is the same as its old name, this probably isn't "
+                         "what you want and the name is badly formatted.")
+
+    return new_name
 
 
 def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
