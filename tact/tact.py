@@ -13,6 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
@@ -29,7 +30,7 @@ def main():
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
 
-    np.random.seed(cfg.get("seed"))
+    np.random.seed(cfg["seed"])
     plt.style.use("ggplot")
 
     # Make ouptut directories
@@ -46,16 +47,13 @@ def main():
 
     # Configure preprocessing
     pre = []
-    try:
-        for p in cfg["preprocessors"]:
-            if p["preprocessor"] == "robust_scaler":
-                preprocessing.add_robust_scaler(pre, **p["config"])
-            if p["preprocessor"] == "standard_scaler":
-                preprocessing.add_standard_scaler(pre, **p["config"])
-            if p["preprocessor"] == "PCA":
-                preprocessing.add_PCA(pre, **p["config"])
-    except KeyError:
-        pass
+    for p in cfg["preprocessors"]:
+        if p["preprocessor"] == "robust_scaler":
+            preprocessing.add_robust_scaler(pre, **p["config"])
+        if p["preprocessor"] == "standard_scaler":
+            preprocessing.add_standard_scaler(pre, **p["config"])
+        if p["preprocessor"] == "PCA":
+            preprocessing.add_PCA(pre, **p["config"])
 
     # Make plots
     sig_df = df[df.Signal == 1]

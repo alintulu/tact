@@ -16,7 +16,21 @@ try:
 except ImportError:
     from yaml import Loader
 
-cfg = {}
+# Defaults
+cfg = {"seed": None,
+       "channel": "all",
+       "plot_dir": "plots/",
+       "root_dir": "root/",
+       "mva_dir": "mva/",
+       "test_fraction": 0.5,
+       "equalise_signal": True,
+       "negative_weight_treatment": "passthrough",
+       "preprocessors": (),
+       "root_out": {"combine": True,
+                    "drop_nan": False,
+                    "data": "empty",
+                    "bins": 20},
+       }
 
 
 def read_config():
