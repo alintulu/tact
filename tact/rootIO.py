@@ -124,7 +124,7 @@ def reweight(w):
     Takes the absolute value of the supplied weights, and scales the
     resulting weights down to restore the original normalisation.
 
-    Will fail if the normalisation is < 0.
+    Will raise a ValueError if =< 0.
 
     Parameters
     ----------
@@ -137,17 +137,14 @@ def reweight(w):
         Series with adjusted weights.
     """
 
-    reweighted = np.abs(w)
-    try:
-        reweighted = reweighted * \
-                (np.sum(w) / np.sum(reweighted))
-    except ZeroDivisionError:  # all weights are 0 or df is empty
-        pass
+    w_sum = w.sum()
 
-    assert np.isclose(np.sum(w), np.sum(reweighted)), \
-        "Bad weight renormalisation"
-    assert (reweighted >= 0).all(), \
-        "Negative MVA Weights after reweight"
+    if w_sum <= 0:
+        raise ValueError("Normalisation of weights should be positive, is: ",
+                         w_sum)
+
+    reweighted = np.abs(w)
+    reweighted = reweighted * (w_sum / reweighted.sum())
 
     return reweighted
 
