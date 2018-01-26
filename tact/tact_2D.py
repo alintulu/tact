@@ -28,11 +28,7 @@ def main():
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
 
-    try:
-        import numpy as np
-        np.random.seed(cfg["seed"])
-    except KeyError:
-        pass
+    np.random.seed(cfg.get("seed"))
     plt.style.use("ggplot")
 
     # Make ouptut directories
