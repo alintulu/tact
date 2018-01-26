@@ -105,16 +105,16 @@ def balance_weights(w1, w2):
 
     sum1 = np.sum(w1)
     sum2 = np.sum(w2)
+
     scale = truediv(*sorted([sum1, sum2], reverse=True))  # always scale up
+
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("Bad scale factor: ", scale)
 
     if sum1 < sum2:
         w1 = w1 * scale
     elif sum1 > sum2:
         w2 = w2 * scale
-
-    assert np.isclose(np.sum(w1), np.sum(w2))
-    assert np.sum(w1) >= sum1
-    assert np.sum(w2) >= sum2
 
     return w1, w2
 
