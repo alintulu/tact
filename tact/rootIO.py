@@ -119,6 +119,39 @@ def balance_weights(w1, w2):
     return w1, w2
 
 
+def reweight(w):
+    """
+    Takes the absolute value of the supplied weights, and scales the
+    resulting weights down to restore the original normalisation.
+
+    Will fail if the normalisation is < 0.
+
+    Parameters
+    ----------
+    w : Series
+        Series containing weights.
+
+    Returns
+    -------
+    Series
+        Series with adjusted weights.
+    """
+
+    reweighted = np.abs(w)
+    try:
+        reweighted = reweighted * \
+                (np.sum(w) / np.sum(reweighted))
+    except ZeroDivisionError:  # all weights are 0 or df is empty
+        pass
+
+    assert np.isclose(np.sum(w), np.sum(reweighted)), \
+        "Bad weight renormalisation"
+    assert (reweighted >= 0).all(), \
+        "Negative MVA Weights after reweight"
+
+    return reweighted
+
+
 def read_trees(input_dir, features, signals, backgrounds, selection=None,
                negative_weight_treatment="passthrough",
                equalise_signal=True, branch_w="EvtWeight",
@@ -200,38 +233,6 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
         """
 
         return re.split(r"histofile_|\.", path)[-2]
-
-    def reweight(w):
-        """
-        Takes the absolute value of the supplied weights, and scales the
-        resulting weights down to restore the original normalisation.
-
-        Will fail if the normalisation is < 0.
-
-        Parameters
-        ----------
-        w : Series
-            Series containing weights.
-
-        Returns
-        -------
-        Series
-            Series with adjusted weights.
-        """
-
-        reweighted = np.abs(w)
-        try:
-            reweighted = reweighted * \
-                    (np.sum(w) / np.sum(reweighted))
-        except ZeroDivisionError:  # all weights are 0 or df is empty
-            pass
-
-        assert np.isclose(np.sum(w), np.sum(reweighted)), \
-            "Bad weight renormalisation"
-        assert (reweighted >= 0).all(), \
-            "Negative MVA Weights after reweight"
-
-        return reweighted
 
     sig_dfs = []
     bkg_dfs = []
