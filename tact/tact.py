@@ -50,9 +50,9 @@ def main():
     for p in cfg["preprocessors"]:
         if p["preprocessor"] == "robust_scaler":
             preprocessing.add_robust_scaler(pre, **p["config"])
-        if p["preprocessor"] == "standard_scaler":
+        elif p["preprocessor"] == "standard_scaler":
             preprocessing.add_standard_scaler(pre, **p["config"])
-        if p["preprocessor"] == "PCA":
+        elif p["preprocessor"] == "PCA":
             preprocessing.add_PCA(pre, **p["config"])
 
     # Make plots
