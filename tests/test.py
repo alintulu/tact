@@ -250,8 +250,43 @@ class ColToTH1Tests(unittest.TestCase):
         Test if an empty histogram is returned with empty input.
         """
         bins = 20
-        h = rootIO.col_to_TH1(np.array([]), bins=20)
+        h = rootIO.col_to_TH1(np.array([]), bins=bins)
         self.assertIsInstance(h, ROOT.TH1D)
+        self.assertEqual(sum(h.GetBinContent(i) for i in range(1, bins + 1)),
+                         0)
+
+
+class PoissonPseudodataTests(unittest.TestCase):
+    """
+    Tests for rootIO.poisson_pseudodata
+    """
+
+    # TODO: There should be some sort of test on the bin contents
+
+    def setUp(self):
+        self.a = np.random.rand(1000) - 0.5
+
+    def test_TH1_returned(self):
+        """
+        Check a TH1D is returned.
+        """
+        self.assertIsInstance(rootIO.poisson_pseudodata(self.a), ROOT.TH1D)
+
+    def test_same_bin_number(self):
+        """
+        Check the number of bins is unchanged.
+        """
+        bins = 40
+        self.assertEqual(rootIO.poisson_pseudodata(self.a,
+                                                   bins=bins).GetNbinsX(),
+                         bins)
+
+    def test_empty(self):
+        """
+        Check an empty input returns an empty histogram.
+        """
+        bins = 20
+        h = rootIO.poisson_pseudodata(np.array([]), bins=20)
         self.assertEqual(sum(h.GetBinContent(i) for i in range(1, bins + 1)),
                          0)
 

@@ -382,15 +382,15 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     return h
 
 
-def poisson_pseudodata(df, bins=20, range=(0, 1)):
+def poisson_pseudodata(x, bins=20, range=(0, 1)):
     """
     Generate Poisson pseudodata from a DataFrame by binning the MVA
     discriminant in a TH1D and applying a Poisson randomisation to each bin.
 
     Parameters
     ----------
-    df : DataFrame
-        Dataframe containing the data to be used as a base for the pseudodata.
+    x : array-like
+        Array containing the data to be used as a base for the pseudodata.
     bins : int, optional
         Number of bins in TH1.
     range : (float, float), optional
@@ -406,7 +406,7 @@ def poisson_pseudodata(df, bins=20, range=(0, 1)):
     Should only be used in THETA.
     """
 
-    h = col_to_TH1(df, bins=bins, range=range)
+    h = col_to_TH1(x, bins=bins, range=range)
 
     for i in xrange(1, h.GetNbinsX() + 1):
         try:
