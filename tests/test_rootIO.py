@@ -49,21 +49,21 @@ class BalanceWeightsTests(unittest.TestCase):
 
     def test_raises_on_zeroes(self):
         """
-        Check that ValueError is raised if normalisation is zero.
+        Check that FloatingPointError is raised if normalisation is zero.
         """
         z = np.zeros(1000)
-        self.assertRaises(ValueError, rootIO.balance_weights, z, self.b)
-        self.assertRaises(ValueError, rootIO.balance_weights, self.b, z)
-        self.assertRaises(ValueError, rootIO.balance_weights, z, z)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, z, self.b)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, self.b, z)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, z, z)
 
     def test_raises_on_empty(self):
         """
-        Check that ValueError is raised if either argument is empty.
+        Check that FloatingPointError is raised if either argument is empty.
         """
         e = np.array([])
-        self.assertRaises(ValueError, rootIO.balance_weights, e, self.b)
-        self.assertRaises(ValueError, rootIO.balance_weights, self.b, e)
-        self.assertRaises(ValueError, rootIO.balance_weights, e, e)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, e, self.b)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, self.b, e)
+        self.assertRaises(FloatingPointError, rootIO.balance_weights, e, e)
 
     def test_raises_on_negative(self):
         """
