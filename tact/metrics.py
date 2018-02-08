@@ -142,12 +142,21 @@ def ecdf(x, xw=None):
     if xw is None:
         xw = np.ones(len(x))
 
-    # Create a sorted array of measurements where each measurement is
-    # assoicated with the sum of the total weights of all the measurements less
-    # than or equal to it, with the weights normalised such that they sum to 1
+    w_sum = xw.sum()
+
+    if w_sum <= 0:
+        raise ValueError("Normalisation of weights should be positive, is: ",
+                         w_sum)
+
+    # Sort if not sorted
+    if not (np.diff(x) >= 0).all():
+        idx = x.argsort()
+        x = x[idx]
+        xw = xw[idx]
+
+    # Accumulate weights
     m = np.vstack(((-np.inf, 0),  # required for values < min(x)
-                   np.sort(np.column_stack((x, np.cumsum(xw / np.sum(xw)))),
-                           axis=0)))
+                   np.column_stack((x, np.cumsum(xw / w_sum)))))
 
     # Return a function which gives the value of the ECDF at a given x
     # (vectoried for array-like objects!)
