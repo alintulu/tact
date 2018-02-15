@@ -19,6 +19,7 @@ except ImportError:
 # Defaults
 cfg = {"seed": None,
        "channel": "all",
+       "data_process": None,
        "plot_dir": "plots/",
        "root_dir": "root/",
        "mva_dir": "mva/",
