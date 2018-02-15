@@ -64,7 +64,7 @@ def print_metrics(mva, df_train, df_test,
     if mva_response_test is None:
         mva_response_test = classifiers.evaluate_mva(df_test, mva)
 
-    print("Classification Reports")
+    print("\nClassification Reports:")
     print("Test sample:")
     print(classification_report(y_test, test_prediction,
                                 target_names=["background", "signal"]))
@@ -79,7 +79,7 @@ def print_metrics(mva, df_train, df_test,
     print(confusion_matrix(y_train, train_prediction))
     print()
 
-    print("KS Test p-value")
+    print("KS Test p-value:")
     print("Signal:")
     print(ks_2samp(mva_response_train[y_train == 1],
                    mva_response_test[y_test == 1],
