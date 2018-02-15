@@ -150,9 +150,16 @@ def ecdf(x, xw=None):
 
     # Sort if not sorted
     if not (np.diff(x) >= 0).all():
-        idx = x.argsort()
-        x = x[idx]
-        xw = xw[idx]
+        idx = np.argsort(x)
+
+        try:
+            x = x.iloc[idx]
+        except AttributeError:
+            x = x[idx]
+        try:
+            xw = xw.iloc[idx]
+        except AttributeError:
+            xw = xw[idx]
 
     # Accumulate weights
     m = np.vstack(((-np.inf, 0),  # required for values < min(x)
