@@ -92,10 +92,10 @@ def print_metrics(mva, df_train, df_test,
                    None if w_test is None else w_test[y_test == 0])[1])
     print()
 
-    if hasattr(mva, "feature_importances_"):
+    if hasattr(mva.steps[-1][1], "feature_importances_"):
         print("Feature importance:")
         for var, importance in sorted(
-                zip(list(df_train), mva.feature_importances_),
+                zip(list(df_train), mva.steps[-1][1].feature_importances_),
                 key=lambda x: x[1],
                 reverse=True):
             print("{0:15} {1:.3E}".format(var, importance))
