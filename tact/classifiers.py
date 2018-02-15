@@ -162,6 +162,7 @@ def bdt_ada(df_train, pre, y, sample_weight=None, **kwargs):
         Sample weights. If None, then samples are equally weighted.
     kwargs : dict
         Additional keyword arguments passed to
+        sklearn.tree.DecisionTreeClassifier and
         sklearn.ensemble.AdaBoostClassifier.
 
     Returns
@@ -171,10 +172,20 @@ def bdt_ada(df_train, pre, y, sample_weight=None, **kwargs):
         preprocessing steps.
     """
 
+    from inspect import getargspec
+
     from sklearn.ensemble import AdaBoostClassifier
     from sklearn.tree import DecisionTreeClassifier
 
-    bdt = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), **kwargs)
+    # Split kwargs into those accepted by DecisionTreeClassifier and those
+    # accepted by AdaBoostClassifier
+    dt_kwargs = {k: kwargs[k] for k in
+                 getargspec(DecisionTreeClassifier.__init__).args[1:]}
+    ada_kwargs = {k: kwargs[k] for k in
+                  getargspec(AdaBoostClassifier.__init__).args[1:]}
+
+    bdt = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(**dt_kwargs),
+                             **kwargs)
 
     mva = make_pipeline(*(pre + [bdt]))
 
