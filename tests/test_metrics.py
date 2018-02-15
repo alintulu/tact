@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
 import unittest
 
 import numpy as np
+import pandas as pd
 import ROOT
 
 from context import tact
@@ -114,6 +115,20 @@ class KS2SampTests(unittest.TestCase):
             np.array(metrics.ks_2samp(np.linspace(1, 100, 100),
                                       np.linspace(1, 100, 110) + 20 - 0.1)),
             np.array((0.20818181818181825, 0.017981441789762638)))
+
+        def test_series(self):
+            """
+            Check the same values are returned for pandas Series and numpy
+            arrays.
+            """
+            a = np.random.normal(1, 1, 100)
+            b = np.random.normal(1, 1, 100)
+            aw = np.random.normal(1, 1, 100)
+            bw = np.random.normal(1, 1, 100)
+
+            self.assertEquals(metrics.ks_2samp(a, b, aw, bw),
+                              metrics.ks_2samp(pd.Series(a), pd.Series(b),
+                                               pd.Series(aw), pd.Series(bw)))
 
     # TODO create test cases for weighted samples
 
