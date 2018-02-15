@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import sys
+from os.path import expanduser
 
 from yaml import load
 
@@ -54,3 +55,10 @@ def read_config():
         f = open(sys.argv[1], 'r')
 
     cfg.update(load(f, Loader=Loader))
+
+    # Expand paths
+    for path_var in ("input_dir", "plot_dir", "mva_dir", "root_dir"):
+        try:
+            cfg[path_var] = expanduser(cfg[path_var])
+        except IndexError:
+            pass
