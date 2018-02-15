@@ -55,7 +55,7 @@ def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
     n_histograms = len(df_sig.columns)
 
     ncols = 2
-    nrows = n_histograms // ncols + 1
+    nrows = (n_histograms + ncols - 1) // ncols
 
     fig_size = (ncols * 1.618 * 3, nrows * 3)
 
