@@ -56,8 +56,8 @@ def print_metrics(mva, df_train, df_test,
     None
     """
 
-    train_prediction = mva.predict(df_train.as_matrix())
-    test_prediction = mva.predict(df_test.as_matrix())
+    train_prediction = mva.predict(df_train)
+    test_prediction = mva.predict(df_test)
 
     if mva_response_train is None:
         mva_response_train = classifiers.evaluate_mva(df_train, mva)

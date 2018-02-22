@@ -268,7 +268,7 @@ def bdt_xgb(df_train, pre, y, sample_weight=None, **kwargs):
 
     mva = make_pipeline(*(pre + [bdt]))
 
-    mva.fit(df_train, y, xgboostclassifier__sample_weight=sample_weight)
+    mva.fit(df_train, y, xgbclassifier__sample_weight=sample_weight)
             # eval_metric="auc",
             # early_stopping_rounds=50,
             # eval_set=[(df_test, sample_weight)])
