@@ -16,6 +16,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from wquantiles import quantile_1D as wquantile
 
 from tact import plotting as pt
 from tact import classifiers, metrics, preprocessing, rootIO
@@ -136,10 +137,17 @@ def main():
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
+    if cfg["root_out"]["quantile_bins"]:
+        bins = np.fromiter((wquantile(df_train.MVA, np.ones(len(df_train.MVA)), x) for x in
+                            np.linspace(0, 1, cfg["root_out"]["bins"] + 1)),
+                           np.float)
+    else:
+        bins = cfg["root_out"]["bins"]
+
     rootIO.write_root(
         cfg["input_dir"], cfg["features"],
         lambda df: classifiers.evaluate_mva(df[features], mva),
-        selection=cfg["selection"], bins=cfg["root_out"]["bins"],
+        selection=cfg["selection"], bins=bins,
         data=cfg["root_out"]["data"], combine=cfg["root_out"]["combine"],
         data_process=cfg["data_process"], drop_nan=cfg["root_out"]["drop_nan"],
         channel=cfg["channel"],
