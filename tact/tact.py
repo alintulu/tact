@@ -14,11 +14,12 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 from tact import plotting as pt
-from tact import classifiers, metrics, preprocessing, rootIO
+from tact import classifiers, metrics, preprocessing, rootIO, util, binning
 from tact.config import cfg, read_config
 
 
@@ -135,13 +136,43 @@ def main():
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
+    response = lambda x: classifiers.evaluate_mva(x[features], mva)
+    outrange = (0, 1)
+
+    # if cfg["root_out"].get("kmeans_binning") is True:
+    if True:
+        df = df.assign(MVA=pd.concat((df_train.MVA, df_test.MVA)))
+
+        kmtree = binning.recursive_kmeans(df.MVA, df.Signal, xw=df.EvtWeight,
+                                          s_thresh=1, b_thresh=1,
+                                          n_jobs=-1)
+
+        df = df.assign(cluster=binning.predict_kmeans_tree(kmtree, df.MVA))
+
+        clusters = [el[1] for el in df.groupby("cluster")]
+        lut = {}
+        for i, cluster in enumerate(sorted(clusters,
+                                           key=lambda x:
+                                           util.s_to_n(x.Signal,
+                                                       x.EvtWeight)), 0):
+            lut[cluster.cluster.iloc[0]] = i
+
+        print(lut)
+
+        response = lambda x: \
+            np.vectorize(lut.__getitem__) \
+            (binning.predict_kmeans_tree(kmtree,
+                                         classifiers.evaluate_mva(x[features],
+                                                                  mva)))
+        outrange = (0, len(lut))
+        cfg["root_out"]["bins"] = len(lut)
+
     rootIO.write_root(
-        cfg["input_dir"], cfg["features"],
-        lambda df: classifiers.evaluate_mva(df[features], mva),
+        cfg["input_dir"], cfg["features"], response,
         selection=cfg["selection"], bins=cfg["root_out"]["bins"],
         data=cfg["root_out"]["data"], combine=cfg["root_out"]["combine"],
         data_process=cfg["data_process"], drop_nan=cfg["root_out"]["drop_nan"],
-        channel=cfg["channel"],
+        channel=cfg["channel"], range=outrange,
         filename="{}mva_{}.root".format(cfg["root_dir"], cfg["channel"]))
 
 

@@ -286,7 +286,7 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
     sig_df[col_target] = 1
     bkg_df[col_target] = 0
 
-    return pd.concat([sig_df, bkg_df])
+    return pd.concat([sig_df, bkg_df]).reset_index(drop=True)
 
 
 def _format_TH1_name(name, combine=True, channel="all"):
