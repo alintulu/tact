@@ -14,12 +14,12 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from wquantiles import quantile_1D as wquantile
 
 from tact import plotting as pt
-from tact import classifiers, metrics, preprocessing, rootIO
+from tact import classifiers, metrics, preprocessing, rootIO, util, binning
 from tact.config import cfg, read_config
 
 
@@ -109,6 +109,7 @@ def main():
                                                           mva))
     df_train = df_train.assign(MVA=classifiers.evaluate_mva(df_train[features],
                                                             mva))
+    df = df.assign(MVA=pd.concat((df_train.MVA, df_test.MVA)))
 
     # Save trained classifier
     classifiers.save_classifier(mva, cfg, "{}{}_{}".format(cfg["mva_dir"],
@@ -137,20 +138,50 @@ def main():
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
-    if cfg["root_out"]["quantile_bins"]:
-        bins = np.fromiter((wquantile(df_train.MVA, np.ones(len(df_train.MVA)), x) for x in
-                            np.linspace(0, 1, cfg["root_out"]["bins"] + 1)),
-                           np.float)
-    else:
+
+    # Binning
+    response = lambda x: classifiers.evaluate_mva(x[features], mva)
+    outrange = (0, 1)
+
+    if cfg["root_out"].get("binning_strategy") == "equal" or \
+            cfg["root_out"].get("binning_strategy") is None:
         bins = cfg["root_out"]["bins"]
+    elif cfg["root_out"]["binning_strategy"] == "quantile":
+        bins = df.MVA.quantile(np.linspace(0, 1, cfg["root_out"]["bins"] + 1))
+        bins[0] = 0
+        bins[-1] = 1
+    elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
+        kmtree = binning.recursive_kmeans(
+            df.MVA, df.Signal, xw=df.EvtWeight, n_jobs=-1,
+            s_thresh=cfg["root_out"]["min_signal_events"],
+            b_thresh=cfg["root_out"]["min_background_events"])
+        df = df.assign(cluster=binning.predict_kmeans_tree(kmtree, df.MVA))
+
+        clusters = [el[1] for el in df.groupby("cluster")]
+        lut = {}
+        for i, cluster in \
+                enumerate(sorted(clusters, key=lambda x:
+                                 util.s_to_n(x.Signal,
+                                             x.EvtWeight)), 0):
+            lut[cluster.cluster.iloc[0]] = i
+
+        response = lambda x: \
+            np.vectorize(lut.__getitem__)(
+                binning.predict_kmeans_tree(
+                    kmtree,
+                    classifiers.evaluate_mva(x[features], mva)))
+        outrange = (0, len(lut))
+        bins = len(lut)
+    else:
+        raise ValueError("Unrecognised value for option 'binning_strategy': ",
+                         cfg["root_out"]["binning_strategy"])
 
     rootIO.write_root(
-        cfg["input_dir"], cfg["features"],
-        lambda df: classifiers.evaluate_mva(df[features], mva),
+        cfg["input_dir"], cfg["features"], response,
         selection=cfg["selection"], bins=bins,
         data=cfg["root_out"]["data"], combine=cfg["root_out"]["combine"],
         data_process=cfg["data_process"], drop_nan=cfg["root_out"]["drop_nan"],
-        channel=cfg["channel"],
+        channel=cfg["channel"], range=outrange,
         filename="{}mva_{}.root".format(cfg["root_dir"], cfg["channel"]))
 
 
