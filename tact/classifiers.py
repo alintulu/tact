@@ -58,7 +58,8 @@ def evaluate_mva(df, mva):
 
 
 def mlp(df_train, pre, y, serialized_model, sample_weight=None,
-        model_params={}, early_stopping_params=None, compile_params={}):
+        model_params={}, early_stopping_params=None, compile_params={},
+        lr_reduction_params=None):
     """
     Train using a multi-layer perceptron (MLP).
 
@@ -116,6 +117,11 @@ def mlp(df_train, pre, y, serialized_model, sample_weight=None,
     from keras.wrappers.scikit_learn import KerasClassifier
 
     callbacks = []
+
+    if lr_reduction_params is not None:
+        from keras.callbacks import ReduceLROnPlateau
+        callbacks.append(ReduceLROnPlateau(**lr_reduction_params))
+
     if early_stopping_params is not None:
         from keras.callbacks import EarlyStopping
         callbacks.append(EarlyStopping(**early_stopping_params))
