@@ -148,8 +148,13 @@ def main():
         bins = cfg["root_out"]["bins"]
     elif cfg["root_out"]["binning_strategy"] == "quantile":
         bins = df.MVA.quantile(np.linspace(0, 1, cfg["root_out"]["bins"] + 1))
-        bins[0] = 0
-        bins[-1] = 1
+        bins[0] = outrange[0]
+        bins[-1] = outrange[1]
+    elif cfg["root_out"]["binning_strategy"] == "recursive_median":
+        bins = binning.recursive_median(df.MVA, df.Signal, df.EvtWeight,
+                                        s_thresh=1, b_thresh=1)
+        bins[0] = outrange[0]
+        bins[-1] = outrange[1]
     elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
         kmtree = binning.recursive_kmeans(
             df.MVA, df.Signal, xw=df.EvtWeight, n_jobs=-1,

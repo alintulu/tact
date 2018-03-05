@@ -15,6 +15,52 @@ class BinaryTree(object):
         self.val = None
 
 
+def nodes(tree):
+    """
+    Return a list of values at every node of a tree.
+
+    Parameters
+    ----------
+    tree : BinaryTree
+        BinaryTree to extract nodes from.
+
+    Returns
+    -------
+    nodelist : list
+        List of values at tree nodes.
+    """
+
+    nodelist = []
+
+    def _get_nodes(tree):
+        """
+        Build up a list of nodes.
+
+        Parameters
+        ----------
+        tree : BinaryTree
+            BinaryTree to extract nodes from.
+
+        Returns
+        -------
+        None
+        """
+
+        nodelist.append(tree.val)
+        try:
+            _get_nodes(tree.left)
+        except AttributeError:
+            nodelist.append(tree.left)
+        try:
+            _get_nodes(tree.right)
+        except AttributeError:
+            nodelist.append(tree.right)
+
+    _get_nodes(tree)
+
+    return nodelist
+
+
 def s_to_n(cat, w=None):
     """
     Calculate the signal-to-noise ratio.
