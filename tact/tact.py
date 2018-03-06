@@ -157,7 +157,7 @@ def main():
         bins[-1] = outrange[1]
     elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
         _, bins = binning.recursive_kmeans(
-            df.MVA, df.Signal, xw=df.EvtWeight,
+            df.MVA.values.reshape(-1, 1), df.Signal, xw=df.EvtWeight,
             s_thresh=cfg["root_out"]["min_signal_events"],
             b_thresh=cfg["root_out"]["min_background_events"],
             bin_edges=True, n_jobs=-1)

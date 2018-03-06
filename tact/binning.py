@@ -158,8 +158,8 @@ def _recursive_kmeans_tree(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
         xw = np.ones(len(x))
 
     km = KMeans(n_clusters=2, **kwargs)
-    km.fit(x.reshape(-1, 1))
-    mask = (km.predict(x.reshape(-1, 1)) == 0)
+    km.fit(x)
+    mask = (km.predict(x) == 0)
 
     if _below_threshold(xw[mask], cat[mask],
                         s_thresh, b_thresh) or \
