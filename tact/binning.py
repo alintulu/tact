@@ -122,7 +122,7 @@ def recursive_median(x, cat, xw=None, s_thresh=1, b_thresh=1):
     return bins
 
 
-def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
+def _recursive_kmeans_tree(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
     """
     Perform clustering using a recursive k-means algorithm.
 
@@ -168,12 +168,78 @@ def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
         return None
 
     tree.val = km
-    tree.left = recursive_kmeans(x[mask], cat[mask],
-                                 xw[mask], s_thresh, b_thresh)
-    tree.right = recursive_kmeans(x[~mask], cat[~mask],
-                                  xw[~mask], s_thresh, b_thresh)
+    tree.left = _recursive_kmeans_tree(x[mask], cat[mask],
+                                       xw[mask], s_thresh, b_thresh)
+    tree.right = _recursive_kmeans_tree(x[~mask], cat[~mask],
+                                        xw[~mask], s_thresh, b_thresh)
 
     return tree
+
+
+def kmeans_bin_edges(tree):
+    """
+    For a tree of trained 1D k-means classifiers, retrieve the values where two
+    clusters meet.
+
+    Parameters
+    ----------
+    tree : BinaryTree
+        BinaryTree containing 1D k-means classifiers.
+
+    Returns
+    -------
+    bin_edges:
+        Cluster edges. Binning using these values as edges will be equivalent
+        to clustering.
+    """
+
+    return np.fromiter(sorted(np.mean(km.cluster_centers_)
+                              for km in util.nodes(tree) if km is not None),
+                       np.float)
+
+
+def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1,
+                     bin_edges=False, **kwargs):
+    """
+    Perform clustering using a recursive k-means algorithm.
+
+    The provided data is split into two clusters using k-means with two
+    centroids. These are then sub-clustered until a further split would result
+    in a population of signal or background below the specified thresholds.
+
+    Parameters
+    ----------
+    x : array-like, shape=[n_samples, n_features]
+        Data to be clustered.
+    cat : 1D array, shape=n_samples
+        Array containing labels describing whether an entry is signal (1 or
+        True) or background (0 or False).
+    xw : array-like, shape=n_samples, optional
+        Weights for samples in x. If None, equal weights are used.
+    s_thresh, b_thresh, float, optional
+        Minimum number of samples in a cluster in signal or background before
+        splitting is stopped.
+    kwargs
+        Additional keyword arguments passed to sklearn.cluster.KMeans
+
+    Returns
+    -------
+    kmtree : BinaryTree
+        BinaryTree containing trained k-means clusterers.
+    bin_edges:
+        If n_features == 1 and bin_edges == true, this contains the values of
+        the bin edges for a 1D histogram which will split x by cluster.
+        Leftmost and rightmost edges are set to min(x) and max(x) respectively.
+    """
+
+    kmtree = _recursive_kmeans_tree(x, cat, xw, s_thresh, b_thresh, **kwargs)
+
+    if bin_edges:
+        return kmtree, np.concatenate(([x.min()],
+                                       kmeans_bin_edges(kmtree),
+                                       [x.max()]))
+    else:
+        return kmtree
 
 
 def predict_kmeans_tree(tree, X):

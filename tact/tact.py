@@ -156,27 +156,13 @@ def main():
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
     elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
-        kmtree = binning.recursive_kmeans(
-            df.MVA, df.Signal, xw=df.EvtWeight, n_jobs=-1,
+        _, bins = binning.recursive_kmeans(
+            df.MVA, df.Signal, xw=df.EvtWeight,
             s_thresh=cfg["root_out"]["min_signal_events"],
-            b_thresh=cfg["root_out"]["min_background_events"])
-        df = df.assign(cluster=binning.predict_kmeans_tree(kmtree, df.MVA))
-
-        clusters = [el[1] for el in df.groupby("cluster")]
-        lut = {}
-        for i, cluster in \
-                enumerate(sorted(clusters, key=lambda x:
-                                 util.s_to_n(x.Signal,
-                                             x.EvtWeight)), 0):
-            lut[cluster.cluster.iloc[0]] = i
-
-        response = lambda x: \
-            np.vectorize(lut.__getitem__)(
-                binning.predict_kmeans_tree(
-                    kmtree,
-                    classifiers.evaluate_mva(x[features], mva)))
-        outrange = (0, len(lut))
-        bins = len(lut)
+            b_thresh=cfg["root_out"]["min_background_events"],
+            bin_edges=True, n_jobs=-1)
+        bins[0] = outrange[0]
+        bins[-1] = outrange[1]
     else:
         raise ValueError("Unrecognised value for option 'binning_strategy': ",
                          cfg["root_out"]["binning_strategy"])
