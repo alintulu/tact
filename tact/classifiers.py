@@ -313,7 +313,7 @@ def random_forest(df_train, pre, y, sample_weight=None, **kwargs):
 
     mva = make_pipeline(*(pre + [rf]))
 
-    rf.fit(df_train, y, randomforestclassifier__sample_weight=sample_weight)
+    mva.fit(df_train, y, randomforestclassifier__sample_weight=sample_weight)
 
     return mva
 
