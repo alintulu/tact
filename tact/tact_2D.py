@@ -14,12 +14,12 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-from tact import classifiers, rootIO
+from tact import classifiers, rootIO, util
 from tact import plotting as pt
 from tact.config import cfg, read_config
 
+import matplotlib.pyplot as plt
 
 def main():
     # Read configuration
@@ -128,15 +128,11 @@ def main():
 
         # Create a lookup table mapping the cluster lables to their ranking in
         # S/N ratio
-        def s_to_n(x):
-            signal = x.loc[x.Process == "tZq"].EvtWeight.sum()
-            noise = x.loc[x.Process != "tZq"].EvtWeight.sum()
-
-            return signal / noise
-
         clusters = [el[1] for el in df.groupby("kmean")]
         lut = {}
-        for i, cluster in enumerate(sorted(clusters, key=s_to_n), 0):
+        for i, cluster in enumerate(
+                sorted(clusters, key=lambda x:
+                       util.s_to_n(x.Signal, x.EvtWeight)), 0):
             lut[cluster.kmean.iloc[0]] = i
 
         response = lambda x: np.vectorize(lut.__getitem__)(km.predict(
