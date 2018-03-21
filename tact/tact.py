@@ -151,15 +151,21 @@ def main():
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
     elif cfg["root_out"]["binning_strategy"] == "recursive_median":
-        bins = binning.recursive_median(df.MVA, df.Signal, df.EvtWeight,
-                                        s_thresh=1, b_thresh=1)
+        bins = binning.recursive_median(
+            df.MVA, df.Signal, df.EvtWeight,
+            s_num_thresh=cfg["root_out"]["min_signal_events"],
+            b_num_thresh=cfg["root_out"]["min_background_events"],
+            s_err_thresh=cfg["root_out"]["max_signal_error"],
+            b_err_thresh=cfg["root_out"]["max_background_error"])
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
     elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
         _, bins = binning.recursive_kmeans(
             df.MVA.values.reshape(-1, 1), df.Signal, xw=df.EvtWeight,
-            s_thresh=cfg["root_out"]["min_signal_events"],
-            b_thresh=cfg["root_out"]["min_background_events"],
+            s_num_thresh=cfg["root_out"]["min_signal_events"],
+            b_num_thresh=cfg["root_out"]["min_background_events"],
+            s_err_thresh=cfg["root_out"]["max_signal_error"],
+            b_err_thresh=cfg["root_out"]["max_background_error"],
             bin_edges=True, n_jobs=-1)
         bins[0] = outrange[0]
         bins[-1] = outrange[1]

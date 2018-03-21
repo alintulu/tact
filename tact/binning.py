@@ -13,10 +13,11 @@ import numpy as np
 from tact import util
 
 
-def _below_threshold(xw, cat, s_thresh, b_thresh):
+def _meets_num_threshold(xw, cat, s_num_thresh=1, b_num_thresh=1,
+                         s_err_thresh=0.3, b_err_thresh=0.3):
     """
-    Check if the number of signal and background events in xw are below the
-    specified thresholds.
+    Check if the number of signal and background events in xw are above the
+    specified number threshold and above the specified error threshold.
 
     Parameters
     ----------
@@ -25,25 +26,34 @@ def _below_threshold(xw, cat, s_thresh, b_thresh):
     cat : 1D array, shape=N
         Array containing labels describing whether an entry is signal (1 or
     True) or background (0 or False).
-    s_thresh, b_thresh, float, optional
+    s_num_thresh, b_num_thresh, float, optional
         Signal and background event count thresholds.
+    s_num_thresh, b_num_thresh, float, optional
+        Signal and background event bin error thresholds.
 
     Returns
     -------
     bool
-        True if below either threshold, False otherwise.
+        True if meets either threshold, False otherwise.
     """
 
-    return xw[cat == 0].sum() < b_thresh or xw[cat == 1].sum() < s_thresh
+    sums = xw[cat == 1].sum()
+    sumb = xw[cat == 0].sum()
+
+    return sumb < b_num_thresh or sums < s_num_thresh \
+        or (xw[cat == 0] ** 2).sum() ** 0.5 / sumb > s_err_thresh \
+        or (xw[cat == 1] ** 2).sum() ** 0.5 / sums > b_err_thresh
 
 
-def _recursive_median_tree(x, cat, xw=None, s_thresh=1, b_thresh=1):
+def _recursive_median_tree(x, cat, xw=None, s_num_thresh=1, b_num_thresh=1,
+                           s_err_thresh=0.3, b_err_thresh=0.3):
     """
     Perform binning by recursively finding the median.
 
     The provided data is split at the median. The resulting subsamples are
     continually split until doing so would result in a sample with less than
-    s_thresh (b_thresh) signal (background) events.
+    s_num_thresh (b_num_thresh) signal (background) events or a % bin error
+    greater than s_err_thresh in signal or b_err_thresh in background.
 
     Parameters
     ----------
@@ -54,8 +64,11 @@ def _recursive_median_tree(x, cat, xw=None, s_thresh=1, b_thresh=1):
         True) or background (0 or False).
     xw : array-like, shape=N, optional
         Weights for samples in x. If None, equal weights are used.
-    s_thresh, b_thresh, float, optional
+    s_num_thresh, b_num_thresh, float, optional
         Minimum number of samples in a cluster in signal or background before
+        splitting is stopped.
+    s_err_thresh, b_err_thresh, float, optional
+        Maximum percentage error in a cluster in signal or background before
         splitting is stopped.
 
     Returns
@@ -70,29 +83,35 @@ def _recursive_median_tree(x, cat, xw=None, s_thresh=1, b_thresh=1):
     median = np.median(x)
     mask = (x < median)
 
-    if _below_threshold(xw[mask], cat[mask],
-                        s_thresh, b_thresh) or \
-            _below_threshold(xw[~mask], cat[~mask],
-                             s_thresh, b_thresh):
+    if _meets_num_threshold(
+            xw[mask], cat[mask], s_num_thresh, b_num_thresh,
+            s_err_thresh, b_err_thresh) or \
+            _meets_num_threshold(
+                xw[~mask], cat[~mask], s_num_thresh, b_num_thresh,
+                s_err_thresh, b_err_thresh):
         return None
 
     tree = util.BinaryTree()
     tree.val = median
     tree.left = _recursive_median_tree(x[mask], cat[mask], xw[mask],
-                                       s_thresh, b_thresh)
+                                       s_num_thresh, b_num_thresh,
+                                       s_err_thresh, b_err_thresh)
     tree.right = _recursive_median_tree(x[~mask], cat[~mask], xw[~mask],
-                                        s_thresh, b_thresh)
+                                        s_num_thresh, b_num_thresh,
+                                        s_err_thresh, b_err_thresh)
 
     return tree
 
 
-def recursive_median(x, cat, xw=None, s_thresh=1, b_thresh=1):
+def recursive_median(x, cat, xw=None, s_num_thresh=1, b_num_thresh=1,
+                     s_err_thresh=0.3, b_err_thresh=0.3):
     """
     Perform binning by recursively finding the median.
 
     The provided data is split at the median. The resulting subsamples are
     continually split until doing so would result in a sample with less than
-    s_thresh (b_thresh) signal (background) events.
+    s_num_thresh (b_num_thresh) signal (background) events or a % bin error
+    greater than s_err_thresh in signal or b_err_thresh in background.
 
     Parameters
     ----------
@@ -103,8 +122,11 @@ def recursive_median(x, cat, xw=None, s_thresh=1, b_thresh=1):
         True) or background (0 or False).
     xw : array-like, shape=N, optional
         Weights for samples in x. If None, equal weights are used.
-    s_thresh, b_thresh, float, optional
-        Minimum number of samples in a cluster in signal or background before
+    s_num_thresh, b_num_thresh, float, optional
+        Minimum number of samples in a bin in signal or background before
+        splitting is stopped.
+    s_err_thresh, b_err_thresh, float, optional
+        Maximum percentage error in a bin in signal or background before
         splitting is stopped.
 
     Returns
@@ -114,7 +136,8 @@ def recursive_median(x, cat, xw=None, s_thresh=1, b_thresh=1):
         rightmost bin edge at max(x).
     """
 
-    tree = _recursive_median_tree(x, cat, xw, s_thresh, b_thresh)
+    tree = _recursive_median_tree(x, cat, xw, s_num_thresh, b_num_thresh,
+                                  s_err_thresh, b_err_thresh)
 
     bins = ([np.min(x)] +
             sorted(m for m in util.nodes(tree) if m is not None) +
@@ -122,13 +145,15 @@ def recursive_median(x, cat, xw=None, s_thresh=1, b_thresh=1):
     return bins
 
 
-def _recursive_kmeans_tree(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
+def _recursive_kmeans_tree(x, cat, xw=None, s_num_thresh=1, b_num_thresh=1,
+                           s_err_thresh=0.3, b_err_thresh=0.3, **kwargs):
     """
     Perform clustering using a recursive k-means algorithm.
 
     The provided data is split into two clusters using k-means with two
     centroids. These are then sub-clustered until a further split would result
-    in a population of signal or background below the specified thresholds.
+    in a population of signal or background not meeting the specified
+    thresholds.
 
     Parameters
     ----------
@@ -139,8 +164,11 @@ def _recursive_kmeans_tree(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
         True) or background (0 or False).
     xw : array-like, shape=n_samples, optional
         Weights for samples in x. If None, equal weights are used.
-    s_thresh, b_thresh, float, optional
+    s_num_thresh, b_num_thresh, float, optional
         Minimum number of samples in a cluster in signal or background before
+        splitting is stopped.
+    s_err_thresh, b_err_thresh, float, optional
+        Maximum percentage error in a bin in signal or background before
         splitting is stopped.
     kwargs
         Additional keyword arguments passed to sklearn.cluster.KMeans
@@ -161,17 +189,21 @@ def _recursive_kmeans_tree(x, cat, xw=None, s_thresh=1, b_thresh=1, **kwargs):
     km.fit(x)
     mask = (km.predict(x) == 0)
 
-    if _below_threshold(xw[mask], cat[mask],
-                        s_thresh, b_thresh) or \
-            _below_threshold(xw[~mask], cat[~mask],
-                             s_thresh, b_thresh):
+    if _meets_num_threshold(
+            xw[mask], cat[mask], s_num_thresh, b_num_thresh,
+            s_err_thresh, b_err_thresh) or \
+            _meets_num_threshold(
+                xw[~mask], cat[~mask], s_num_thresh, b_num_thresh,
+                s_err_thresh, b_err_thresh):
         return None
 
     tree.val = km
-    tree.left = _recursive_kmeans_tree(x[mask], cat[mask],
-                                       xw[mask], s_thresh, b_thresh)
-    tree.right = _recursive_kmeans_tree(x[~mask], cat[~mask],
-                                        xw[~mask], s_thresh, b_thresh)
+    tree.left = _recursive_kmeans_tree(x[mask], cat[mask], xw[mask],
+                                       s_num_thresh, b_num_thresh,
+                                       s_err_thresh, b_err_thresh)
+    tree.right = _recursive_kmeans_tree(x[~mask], cat[~mask], xw[~mask],
+                                        s_num_thresh, b_num_thresh,
+                                        s_err_thresh, b_err_thresh)
 
     return tree
 
@@ -198,14 +230,16 @@ def kmeans_bin_edges(tree):
                        np.float)
 
 
-def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1,
-                     bin_edges=False, **kwargs):
+def recursive_kmeans(x, cat, xw=None, s_num_thresh=1, b_num_thresh=1,
+                     s_err_thresh=0.3, b_err_thresh=0.3, bin_edges=False,
+                     **kwargs):
     """
     Perform clustering using a recursive k-means algorithm.
 
     The provided data is split into two clusters using k-means with two
     centroids. These are then sub-clustered until a further split would result
-    in a population of signal or background below the specified thresholds.
+    in a population of signal or background not meeting the specified
+    thresholds.
 
     Parameters
     ----------
@@ -216,8 +250,11 @@ def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1,
         True) or background (0 or False).
     xw : array-like, shape=n_samples, optional
         Weights for samples in x. If None, equal weights are used.
-    s_thresh, b_thresh, float, optional
+    s_num_thresh, b_num_thresh, float, optional
         Minimum number of samples in a cluster in signal or background before
+        splitting is stopped.
+    s_err_thresh, b_err_thresh, float, optional
+        Maximum percentage error in a bin in signal or background before
         splitting is stopped.
     kwargs
         Additional keyword arguments passed to sklearn.cluster.KMeans
@@ -232,7 +269,8 @@ def recursive_kmeans(x, cat, xw=None, s_thresh=1, b_thresh=1,
         Leftmost and rightmost edges are set to min(x) and max(x) respectively.
     """
 
-    kmtree = _recursive_kmeans_tree(x, cat, xw, s_thresh, b_thresh, **kwargs)
+    kmtree = _recursive_kmeans_tree(x, cat, xw, s_num_thresh, b_num_thresh,
+                                    s_err_thresh, b_err_thresh, **kwargs)
 
     if bin_edges:
         return kmtree, np.concatenate(([x.min()],
