@@ -15,7 +15,7 @@ import sys
 
 import numpy as np
 
-from tact import classifiers, rootIO, util
+from tact import classifiers, rootIO, util, binning
 from tact import plotting as pt
 from tact.config import cfg, read_config
 
@@ -146,6 +146,45 @@ def main():
         cfg["root_out"]["bins"] = n_clusters
 
         pt.make_cluster_region_plot(km, cmap="tab20",
+                                    filename="{}kmeans_clusters_{}.pdf"
+                                    .format(cfg["plot_dir"], cfg["channel"]))
+        pt.make_scatter_plot(df.MVA1, df.MVA2, marker=",", c=df.kmean,
+                             s=df.EvtWeight.abs(), cmap="tab20",
+                             colorbar=False,
+                             filename="{}kmeans_areas_{}.pdf"
+                             .format(cfg["plot_dir"], cfg["channel"]))
+    elif cfg["combination"] == "recursive_kmeans":
+        kmtree = binning.recursive_kmeans(
+            df[["MVA1", "MVA2"]], df.Signal, xw=df.EvtWeight,
+            s_num_thresh=cfg["root_out"]["min_signal_events"],
+            b_num_thresh=cfg["root_out"]["min_background_events"],
+            s_err_thresh=cfg["root_out"]["max_signal_error"],
+            b_err_thresh=cfg["root_out"]["max_background_error"],
+            n_jobs=-1, verbose=1)
+        df = df.assign(kmean=binning.predict_kmeans_tree(kmtree,
+                                                         df[["MVA1", "MVA2"]]))
+
+        # Create a lookup table mapping the cluster lables to their ranking in
+        # S/N ratio
+        clusters = [el[1] for el in df.groupby("kmean")]
+        lut = {}
+        for i, cluster in enumerate(
+                sorted(clusters, key=lambda x:
+                       util.s_to_n(x.Signal, x.EvtWeight)), 0):
+            lut[cluster.kmean.iloc[0]] = i
+
+        response = lambda x: np.vectorize(lut.__getitem__)(binning.predict_kmeans_tree(kmtree,
+            np.column_stack((
+                classifiers.evaluate_mva(x[cfg["mva1"]["features"]], mva1),
+                classifiers.evaluate_mva(x[cfg["mva2"]["features"]], mva2)))))
+
+        # Set output range and override the number of bins - cluster label is
+        # not continuous.
+        n_clusters = len(lut)
+        range = (0, n_clusters)
+        cfg["root_out"]["bins"] = n_clusters
+
+        pt.make_cluster_region_plot(kmtree, cmap="tab20",
                                     filename="{}kmeans_clusters_{}.pdf"
                                     .format(cfg["plot_dir"], cfg["channel"]))
         pt.make_scatter_plot(df.MVA1, df.MVA2, marker=",", c=df.kmean,

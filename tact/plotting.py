@@ -18,6 +18,9 @@ import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
 
+from tact import binning
+from tact.util import BinaryTree
+
 
 def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
                              filename="vars.pdf", **kwargs):
@@ -322,7 +325,10 @@ def make_cluster_region_plot(c, filename="kmeans_areas.pdf", **kwargs):
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
                          np.arange(y_min, y_max, h))
 
-    Z = c.predict(np.c_[xx.ravel(), yy.ravel()])
+    if isinstance(c, BinaryTree):
+        Z = binning.predict_kmeans_tree(c, (np.c_[xx.ravel(), yy.ravel()]))
+    else:
+        Z = c.predict(np.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
 
     ax.imshow(Z, interpolation='nearest',

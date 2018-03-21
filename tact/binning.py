@@ -341,4 +341,5 @@ def predict_kmeans_tree(tree, X):
 
         return cluster
 
-    return np.vectorize(predict_kmeans_tree_event)(tree, X)
+    return np.apply_along_axis(
+        lambda x: predict_kmeans_tree_event(tree, x.reshape(1, -1)), 1, X)
