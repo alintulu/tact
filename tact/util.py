@@ -7,12 +7,42 @@ Module containing miscellaneous utility functions.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import collections
+
 
 class BinaryTree(object):
     def __init__(self):
         self.left = None
         self.right = None
         self.val = None
+
+
+def deep_update(d1, d2):
+    """
+    Adds key-value pairs in d2 to d1. Conflicts are resolved in favour of d2.
+
+    Recurses into all values in d2 which belong to the collections.Mapping
+    abstract base class.
+
+    Parameters
+    ----------
+    d1 : collections.Mapping
+        Base dictionary
+    d2 : collections.Mapping
+        Dictionary with updated values
+
+    Returns
+    -------
+    d1 : collections.Mapping
+        Updated dictionary
+    """
+
+    for k, v in d2.iteritems():
+        if isinstance(v, collections.Mapping):
+            d1[k] = deep_update(d1.get(k, {}), v)
+        else:
+            d1[k] = v
+    return d1
 
 
 def nodes(tree):

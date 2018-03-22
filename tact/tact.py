@@ -19,17 +19,18 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 from tact import plotting as pt
-from tact import classifiers, metrics, preprocessing, rootIO, util, binning
-from tact.config import cfg, read_config
+from tact import classifiers, metrics, preprocessing, rootIO, binning, config
 
 
 def main():
     # Read configuration
     try:
-        read_config()
+        config.read_config()
     except IndexError:
         print(__doc__.strip(), file=sys.stderr)
         sys.exit(1)
+
+    cfg = config.cfg
 
     np.random.seed(cfg["seed"])
     plt.style.use("ggplot")
@@ -79,9 +80,9 @@ def main():
             df_train[features], pre, df_train.Signal, cfg["mlp"]["model"],
             sample_weight=df_train.MVAWeight,
             model_params=cfg["mlp"]["model_params"],
-            early_stopping_params=cfg["mlp"].get("early_stopping_params"),
+            early_stopping_params=cfg["mlp"]["early_stopping_params"],
             compile_params=cfg["mlp"]["compile_params"],
-            lr_reduction_params=cfg["mlp"].get("lr_reduction_params"))
+            lr_reduction_params=cfg["mlp"]["lr_reduction_params"])
     elif cfg["classifier"] == "bdt_ada":
         mva = classifiers.bdt_ada(df_train[features], pre, df_train.Signal,
                                   sample_weight=df_train.MVAWeight,
@@ -143,14 +144,13 @@ def main():
     response = lambda x: classifiers.evaluate_mva(x[features], mva)
     outrange = (0, 1)
 
-    if cfg["root_out"].get("binning_strategy") == "equal" or \
-            cfg["root_out"].get("binning_strategy") is None:
+    if cfg["root_out"]["strategy"] == "equal":
         bins = cfg["root_out"]["bins"]
-    elif cfg["root_out"]["binning_strategy"] == "quantile":
+    elif cfg["root_out"]["strategy"] == "quantile":
         bins = df.MVA.quantile(np.linspace(0, 1, cfg["root_out"]["bins"] + 1))
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
-    elif cfg["root_out"]["binning_strategy"] == "recursive_median":
+    elif cfg["root_out"]["strategy"] == "recursive_median":
         bins = binning.recursive_median(
             df.MVA, df.Signal, df.EvtWeight,
             s_num_thresh=cfg["root_out"]["min_signal_events"],
@@ -159,7 +159,7 @@ def main():
             b_err_thresh=cfg["root_out"]["max_background_error"])
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
-    elif cfg["root_out"]["binning_strategy"] == "recursive_kmeans":
+    elif cfg["root_out"]["strategy"] == "recursive_kmeans":
         _, bins = binning.recursive_kmeans(
             df.MVA.values.reshape(-1, 1), df.Signal, xw=df.EvtWeight,
             s_num_thresh=cfg["root_out"]["min_signal_events"],
@@ -170,8 +170,8 @@ def main():
         bins[0] = outrange[0]
         bins[-1] = outrange[1]
     else:
-        raise ValueError("Unrecognised value for option 'binning_strategy': ",
-                         cfg["root_out"]["binning_strategy"])
+        raise ValueError("Unrecognised value for option 'strategy': ",
+                         cfg["root_out"]["strategy"])
 
     rootIO.write_root(
         cfg["input_dir"], cfg["features"], response,
