@@ -72,7 +72,8 @@ def main():
                             .format(cfg["plot_dir"], cfg["channel"]))
 
     # Split sample
-    df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"])
+    df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"],
+                                         stratify=df.Signal)
 
     # Classify
     if cfg["classifier"] == "mlp":
