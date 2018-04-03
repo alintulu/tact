@@ -61,8 +61,8 @@ def main():
     sig_df = df[df.Signal == 1]
     bkg_df = df[df.Signal == 0]
 
-    pt.make_variable_histograms(sig_df[features], bkg_df[features], bins=42,
-                                filename="{}vars_{}.pdf"
+    pt.make_variable_histograms(df[features], df.Signal, w=df.EvtWeight,
+                                bins=42, filename="{}vars_{}.pdf"
                                 .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(sig_df[features],
                             filename="{}corr_sig_{}.pdf"

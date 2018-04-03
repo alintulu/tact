@@ -22,8 +22,7 @@ from tact import binning
 from tact.util import BinaryTree
 
 
-def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
-                             filename="vars.pdf", **kwargs):
+def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
     """
     Produce histograms comparing the distribution of data in df_sig and df_bkg.
 
@@ -31,16 +30,13 @@ def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
 
     Parameters
     ----------
-    df_sig : DataFrame
-        DataFrame containing signal data.
-    df_bkg : DataFrame
-        DataFrame containing background data.
-    w_sig : array-like, shape = [n_signal_samples]
-        Weights for signal data. If None, then samples are equally
-        weighted.
-    w_bkg : array-like, shape = [n_background_samples]
-        Weights for background data. If None, then samples are equally
-        weighted.
+    df : DataFrame
+        DataFrame containing data.
+    cat : 1D array, shape=N
+        Array containing labels describing whether an entry is signal (1 or
+        True) or background (0 or False).
+    w : array-like, shape=N
+        Weights for data. If None, then samples are equally weighted.
     filename : string, optional
         Name of the file the plot is saved to.
     kwargs :
@@ -50,6 +46,15 @@ def make_variable_histograms(df_sig, df_bkg, w_sig=None, w_bkg=None,
     -------
     None
     """
+
+    if w is None:
+        w = np.ones(len(df))
+
+    mask = (cat == 1)
+    df_sig = df[mask]
+    df_bkg = df[~mask]
+    w_sig = w[mask]
+    w_bkg = w[~mask]
 
     def plot_histograms(df, ax, w=None):
         """Plot histograms for every column in df"""
