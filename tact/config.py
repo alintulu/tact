@@ -21,6 +21,7 @@ except ImportError:
 
 # Defaults
 cfg = {"seed": None,
+       "selection": "",
        "channel": "all",
        "data_process": None,
        "plot_dir": "plots/",
