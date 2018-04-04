@@ -84,10 +84,6 @@ def main():
             early_stopping_params=cfg["mlp"]["early_stopping_params"],
             compile_params=cfg["mlp"]["compile_params"],
             lr_reduction_params=cfg["mlp"]["lr_reduction_params"])
-    elif cfg["classifier"] == "bdt_ada":
-        mva = classifiers.bdt_ada(df_train[features], pre, df_train.Signal,
-                                  sample_weight=df_train.MVAWeight,
-                                  **cfg["bdt_ada"])
     elif cfg["classifier"] == "bdt_xgb":
         mva = classifiers.bdt_xgb(df_train[features], pre, df_train.Signal,
                                   sample_weight=df_train.MVAWeight,

@@ -151,55 +151,6 @@ def mlp(df_train, pre, y, serialized_model, sample_weight=None,
     return mva
 
 
-def bdt_ada(df_train, pre, y, sample_weight=None, **kwargs):
-    """
-    Train using an AdaBoosted decision tree.
-
-    Parameters
-    ----------
-    df_train : array-like, shape = [n_training_samples, n_features]
-        DataFrame containing training features.
-    pre : list
-        List containing preprocessing steps.
-    y : array-like, shape = [n_training_samples]
-        Target values (integers in classification, real numbers in regression).
-        For classification, labels must correspond to classes.
-    sample_weight : array-like, shape = [n_training_samples]
-        Sample weights. If None, then samples are equally weighted.
-    kwargs : dict
-        Additional keyword arguments passed to
-        sklearn.tree.DecisionTreeClassifier and
-        sklearn.ensemble.AdaBoostClassifier.
-
-    Returns
-    -------
-    Pipeline
-        Scikit-learn pipeline containing the trained classifier and
-        preprocessing steps.
-    """
-
-    from inspect import getargspec
-
-    from sklearn.ensemble import AdaBoostClassifier
-    from sklearn.tree import DecisionTreeClassifier
-
-    # Split kwargs into those accepted by DecisionTreeClassifier and those
-    # accepted by AdaBoostClassifier
-    dt_kwargs = {k: kwargs[k] for k in
-                 getargspec(DecisionTreeClassifier.__init__).args[1:]}
-    ada_kwargs = {k: kwargs[k] for k in
-                  getargspec(AdaBoostClassifier.__init__).args[1:]}
-
-    bdt = AdaBoostClassifier(base_estimator=DecisionTreeClassifier(**dt_kwargs),
-                             **kwargs)
-
-    mva = make_pipeline(*(pre + [bdt]))
-
-    mva.fit(df_train, y, adaboostclassifier__sample_weight=sample_weight)
-
-    return mva
-
-
 def bdt_grad(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using a gradient boosted decision tree using scikit-learn's
