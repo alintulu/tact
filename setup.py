@@ -29,6 +29,7 @@ setup(name="tact",
       ],
       extras_require={
           'MLP':  ["Keras"],
-          'xgboost': ["xgboost"]
+          'xgboost': ["xgboost"],
+          'lightgbm': ["lightgbm"]
       },
       zip_safe=False)

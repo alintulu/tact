@@ -92,6 +92,10 @@ def main():
         mva = classifiers.bdt_xgb(df_train[features], pre, df_train.Signal,
                                   sample_weight=df_train.MVAWeight,
                                   **cfg["bdt_xgb"])
+    elif cfg["classifier"] == "bdt_lgbm":
+        mva = classifiers.bdt_lgbm(df_train[features], pre, df_train.Signal,
+                                   sample_weight=df_train.MVAWeight,
+                                   **cfg["bdt_lgbm"])
     elif cfg["classifier"] == "bdt_grad":
         mva = classifiers.bdt_grad(df_train[features], pre, df_train.Signal,
                                    sample_weight=df_train.MVAWeight,

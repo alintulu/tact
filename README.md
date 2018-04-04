@@ -25,9 +25,16 @@ This will install the Keras package, but not a (required!) Keras backend.
 Consult the Keras documentation for availible backends, but note only the
 Theano backend has been tested.
 
-For gradient boosted decision trees using the xgboost library, specify:
+For gradient boosted decision trees using the
+[XGBoost](https://github.com/dmlc/xgboost) library, specify:
 ```bash
 pip install -e .[xgboost]
+```
+
+For gradient boosted decision trees using the
+[LightGBM](https://github.com/Microsoft/LightGBM) library, specify:
+```bash
+pip install -e .[lightgbm]
 ```
 
 ### Usage

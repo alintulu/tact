@@ -282,6 +282,46 @@ def bdt_xgb(df_train, pre, y, sample_weight=None, **kwargs):
     return mva
 
 
+def bdt_lgbm(df_train, pre, y, sample_weight=None, **kwargs):
+    """
+    Train using a gradient boosted decision tree with the LightGBM library.
+
+    Parameters
+    ----------
+    df_train : array-like, shape = [n_training_samples, n_features]
+        DataFrame containing training features.
+    pre : list
+        List containing preprocessing steps.
+    y : array-like, shape = [n_training_samples]
+        Target values (integers in classification, real numbers in regression).
+        For classification, labels must correspond to classes.
+    sample_weight : array-like, shape = [n_training_samples]
+        Sample weights. If None, then samples are equally weighted.
+    kwargs : dict
+        Additional keyword arguments passed to lightgbm.LGBMClassifier()
+
+    Returns
+    -------
+    Pipeline
+        Scikit-learn pipeline containing the trained classifier and
+        preprocessing steps.
+
+    Notes
+    -----
+    Requires xgboost.
+    """
+
+    from lightgbm import LGBMClassifier
+
+    bdt = LGBMClassifier(**kwargs)
+
+    mva = make_pipeline(*(pre + [bdt]))
+
+    mva.fit(df_train, y, lgbmclassifier__sample_weight=sample_weight)
+
+    return mva
+
+
 def random_forest(df_train, pre, y, sample_weight=None, **kwargs):
     """
     Train using a random forest.
