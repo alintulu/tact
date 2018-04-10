@@ -73,7 +73,7 @@ def main():
 
     # Split sample
     df_train, df_test = train_test_split(df, test_size=cfg["test_fraction"],
-                                         stratify=df.Signal)
+                                         stratify=df.Process)
 
     # Classify
     if cfg["classifier"] == "mlp":
