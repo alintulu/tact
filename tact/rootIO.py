@@ -257,6 +257,8 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
             df[col_w] = np.abs(df[branch_w])
         elif negative_weight_treatment == "passthrough":
             df[col_w] = df[branch_w]
+        elif negative_weight_treatment == "zero":
+            df[col_w] = np.clip(df[branch_w], a_min=0, a_max=None)
         else:
             raise ValueError("Bad value for option negative_weight_treatment:",
                              negative_weight_treatment)
