@@ -92,10 +92,35 @@ def print_metrics(mva, df_train, df_test,
                    None if w_test is None else w_test[y_test == 0])[1])
     print()
 
-    if hasattr(mva.steps[-1][1], "feature_importances_"):
+    # Try really hard to get the feature importances
+    feature_importances = []
+    try:
+        feature_importances = mva.feature_importances_
+    except AttributeError:
+        pass
+    try:  # last step of a pipeline?
+        feature_importances = mva.steps[-1][1].feature_importances_
+    except AttributeError:
+        pass
+    try:  # grid search?
+        feature_importances = mva.best_estimator_.feature_importances_
+    except AttributeError:
+        pass
+    try:  # grid search last step of pipeline?
+        feature_importances = \
+            mva.steps[-1][1].best_estimator_.feature_importances_
+    except AttributeError:
+        pass
+    try:  # grid search of a pipeline?
+        feature_importances = \
+            mva.best_estimator_.steps[-1][0].feature_importances_
+    except AttributeError:
+        pass
+
+    if len(feature_importances):
         print("Feature importance:")
         for var, importance in sorted(
-                zip(list(df_train), mva.steps[-1][1].feature_importances_),
+                zip(list(df_train), feature_importances),
                 key=lambda x: x[1],
                 reverse=True):
             print("{0:15} {1:.3E}".format(var, importance))
