@@ -335,16 +335,13 @@ def save_classifier(mva, cfg=None, filename="mva"):
 
     import dill
 
-    SavedClassifier = namedtuple("SavedClassifier", "cfg mva keras")
-
-    keras = 'kerasclassifier' in mva.named_steps
+    SavedClassifier = namedtuple("SavedClassifier", "cfg mva")
 
     # Temporarily boost the recursion limit
     tmp = sys.getrecursionlimit()
     sys.setrecursionlimit(9999)
 
-    dill.dump(SavedClassifier(cfg, mva, keras),
-              open("{}.pkl".format(filename), "wb"))
+    dill.dump(SavedClassifier(cfg, mva), open("{}.pkl".format(filename), "wb"))
 
     sys.setrecursionlimit(tmp)
 
