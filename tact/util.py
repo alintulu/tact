@@ -8,7 +8,9 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import collections
+import itertools
 
+import numpy as np
 
 class BinaryTree(object):
     def __init__(self):
@@ -117,3 +119,21 @@ def s_to_n(cat, w=None):
         noise = w[cat == 0].sum()
 
     return signal / noise
+
+
+def maenumerate(marr):
+    """
+    Multidimensional index iterator for masked arrays.
+
+    Return an iterator yielding pairs of array coordinates and values, with
+    masked values skipped.
+
+    Parameters
+    ----------
+    marr : MaskedArray
+      Input array.
+    """
+
+    for i, m in itertools.izip(np.ndenumerate(marr), ~marr.mask.ravel()):
+        if m:
+            yield i

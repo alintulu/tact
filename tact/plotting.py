@@ -12,6 +12,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from operator import sub
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -19,7 +20,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
 
 from tact import binning
-from tact.util import BinaryTree
+from tact.util import BinaryTree, maenumerate
 
 
 def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
@@ -111,19 +112,25 @@ def make_corelation_plot(df, filename="corr.pdf", **kwargs):
     nvars = len(corr.columns)
 
     fig, ax = plt.subplots()
-    ms = ax.matshow(corr, vmin=-1, vmax=1, **kwargs)
+
+    corr_masked = np.ma.array(corr,
+                              mask=np.tri(corr.shape[0], k=-1, dtype=np.bool))
+    cmap = matplotlib.cm.bwr
+    cmap.set_bad('white', 1.)
+    ax.matshow(corr_masked, vmin=-1, vmax=1, cmap=cmap, **kwargs)
+
+    for (i, j), z in maenumerate(corr_masked):
+        ax.text(j, i, '{}'.format(int(round(z * 100))),
+                ha='center', va='center',
+                bbox=dict(boxstyle='square', facecolor='white', alpha=0.8,
+                          lw=0))
 
     fig.set_size_inches(1 + nvars / 1.5, 1 + nvars / 1.5)
     plt.xticks(xrange(nvars), corr.columns, rotation=90)
+    ax.yaxis.set_ticks_position("right")
     plt.yticks(xrange(nvars), corr.columns)
     ax.tick_params(axis='both', which='both', length=0)  # hide ticks
     ax.grid(False)
-
-    # Workaround for using colorbars with tight_layout
-    # https://matplotlib.org/users/tight_layout_guide.html#colorbar
-    divider = make_axes_locatable(plt.gca())
-    cax = divider.append_axes("right", "5%", pad="3%")
-    plt.colorbar(ms, cax=cax)
 
     plt.tight_layout()
 
