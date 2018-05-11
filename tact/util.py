@@ -137,3 +137,60 @@ def maenumerate(marr):
     for i, m in itertools.izip(np.ndenumerate(marr), ~marr.mask.ravel()):
         if m:
             yield i
+
+def corrcoef(x, y=None, rowvar=True, fweights=None, aweights=None):
+    """
+    Return Pearson product-moment correlation coefficients.
+
+    This is a copy of the implementation found in numpy, with the removal of
+    the deperecated bias and ddof keyword arguments, and the addition of
+    the fweights and aweights arguments, which are pased to np.cov.
+
+    Parameters
+    ----------
+    x : array_like
+        A 1-D or 2-D array containing multiple variables and observations.
+        Each row of `x` represents a variable, and each column a single
+        observation of all those variables. Also see `rowvar` below.
+    y : array_like, optional
+        An additional set of variables and observations. `y` has the same
+        shape as `x`.
+    rowvar : bool, optional
+        If `rowvar` is True (default), then each row represents a
+        variable, with observations in the columns. Otherwise, the relationship
+        is transposed: each column represents a variable, while the rows
+        contain observations.
+    fweights : array_like, int, optional
+        1-D array of integer freguency weights; the number of times each
+        observation vector should be repeated.
+    aweights : array_like, optional
+        1-D array of observation vector weights. These relative weights are
+        typically large for observations considered "important" and smaller for
+        observations considered less "important". If ``ddof=0`` the array of
+        weights can be used to assign probabilities to observation vectors.
+
+    Returns
+    -------
+    R : ndarray
+        The correlation coefficient matrix of the variables.
+    """
+
+    c = np.cov(x, y, rowvar, fweights=fweights, aweights=aweights)
+    try:
+        d = np.diag(c)
+    except ValueError:
+        # scalar covariance
+        # nan if incorrect value (nan, inf, 0), 1 otherwise
+        return c / c
+    stddev = np.sqrt(d.real)
+    c /= stddev[:, None]
+    c /= stddev[None, :]
+
+    # Clip real and imaginary parts to [-1, 1].  This does not guarantee
+    # abs(a[i,j]) <= 1 for complex arrays, but is the best we can do without
+    # excessive work.
+    np.clip(c.real, -1, 1, out=c.real)
+    if np.iscomplexobj(c):
+        np.clip(c.imag, -1, 1, out=c.imag)
+
+    return c

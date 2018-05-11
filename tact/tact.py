@@ -64,10 +64,10 @@ def main():
     pt.make_variable_histograms(df[features], df.Signal, w=df.EvtWeight,
                                 bins=42, filename="{}vars_{}.pdf"
                                 .format(cfg["plot_dir"], cfg["channel"]))
-    pt.make_corelation_plot(sig_df[features],
+    pt.make_corelation_plot(sig_df[features], w=sig_df.MVAWeight,
                             filename="{}corr_sig_{}.pdf"
                             .format(cfg["plot_dir"], cfg["channel"]))
-    pt.make_corelation_plot(bkg_df[features],
+    pt.make_corelation_plot(bkg_df[features], w=bkg_df.MVAWeight,
                             filename="{}corr_bkg_{}.pdf"
                             .format(cfg["plot_dir"], cfg["channel"]))
 

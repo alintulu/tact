@@ -20,7 +20,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
 
 from tact import binning
-from tact.util import BinaryTree, maenumerate
+from tact.util import BinaryTree, maenumerate, corrcoef
 
 
 def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
@@ -87,7 +87,7 @@ def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
     fig.savefig(filename)
 
 
-def make_corelation_plot(df, filename="corr.pdf", **kwargs):
+def make_corelation_plot(df, w=None, filename="corr.pdf", **kwargs):
     """
     Produce matshow plot representing the correlation matrix of df.
 
@@ -108,8 +108,9 @@ def make_corelation_plot(df, filename="corr.pdf", **kwargs):
     None
     """
 
-    corr = df.corr()
-    nvars = len(corr.columns)
+    corr = corrcoef(df.values, rowvar=False, aweights=np.abs(w))
+
+    nvars = len(df.columns)
 
     fig, ax = plt.subplots()
 
@@ -126,9 +127,9 @@ def make_corelation_plot(df, filename="corr.pdf", **kwargs):
                           lw=0))
 
     fig.set_size_inches(1 + nvars / 1.5, 1 + nvars / 1.5)
-    plt.xticks(xrange(nvars), corr.columns, rotation=90)
+    plt.xticks(xrange(nvars), df.columns, rotation=90)
     ax.yaxis.set_ticks_position("right")
-    plt.yticks(xrange(nvars), corr.columns)
+    plt.yticks(xrange(nvars), df.columns)
     ax.tick_params(axis='both', which='both', length=0)  # hide ticks
     ax.grid(False)
 
