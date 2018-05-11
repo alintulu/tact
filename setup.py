@@ -18,7 +18,6 @@ setup(name="tact",
       install_requires=[
           "dill",
           "matplotlib",
-          "more_itertools",
           "numpy",
           "pandas",
           "PyYAML",

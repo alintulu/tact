@@ -24,7 +24,6 @@ from operator import truediv
 
 import numpy as np
 import pandas as pd
-from more_itertools import unique_everseen
 from root_numpy import array2hist
 from root_pandas import read_root
 
@@ -484,8 +483,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
         fi = ROOT.TFile(root_file, "READ")
 
         # Dedupe, the input files contain duplicates for some reason...
-        for tree in unique_everseen(key.ReadObj().GetName()
-                                    for key in fi.GetListOfKeys()):
+        for tree in fi.GetListOfKeys():
+            tree = tree.ReadObj().GetName()
             df = read_tree(root_file, tree, columns=features + [branch_w],
                            where=selection)
 
