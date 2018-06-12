@@ -24,7 +24,7 @@ from operator import truediv
 
 import numpy as np
 import pandas as pd
-from root_numpy import array2hist
+from root_numpy import array2hist, fill_hist
 from root_pandas import read_root
 
 import ROOT
@@ -372,15 +372,13 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     if w is None:
         w = np.ones(len(x))
 
-    contents = np.histogram(x, bins=bins, range=range,
-                            weights=w)[0]
-    errors, bin_edges = np.histogram(x, bins=bins, range=range,
-                                     weights=w ** 2)
-    errors = np.sqrt(errors)
+    _, bin_edges = np.histogram(x, bins=bins, range=range,
+                                weights=w)
 
     h = ROOT.TH1D(name, title, len(bin_edges) - 1, bin_edges)
     h.Sumw2()
-    array2hist(contents, h, errors=errors)
+    fill_hist(h, x, w)
+
     return h
 
 
