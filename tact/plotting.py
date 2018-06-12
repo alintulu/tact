@@ -18,9 +18,8 @@ import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import auc, roc_curve
-
 from tact import binning
-from tact.util import BinaryTree, maenumerate, corrcoef
+from tact.util import BinaryTree, corrcoef, maenumerate
 
 
 def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):

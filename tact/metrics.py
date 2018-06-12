@@ -11,7 +11,6 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from scipy.stats import kstwobign
 from sklearn.metrics import classification_report, confusion_matrix
-
 from tact import classifiers
 
 

@@ -13,13 +13,13 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-
+from tact import binning, classifiers, config, metrics
 from tact import plotting as pt
-from tact import classifiers, metrics, preprocessing, rootIO, binning, config
+from tact import preprocessing, rootIO
 
 
 def main():
@@ -140,9 +140,8 @@ def main():
                       filename="{}roc_{}.pdf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
-
     # Binning
-    response = lambda x: classifiers.evaluate_mva(x[features], mva)
+    def response(x): return classifiers.evaluate_mva(x[features], mva)
     outrange = (0, 1)
 
     if cfg["root_out"]["strategy"] == "equal":

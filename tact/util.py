@@ -12,6 +12,7 @@ import itertools
 
 import numpy as np
 
+
 class BinaryTree(object):
     def __init__(self):
         self.left = None
@@ -137,6 +138,7 @@ def maenumerate(marr):
     for i, m in itertools.izip(np.ndenumerate(marr), ~marr.mask.ravel()):
         if m:
             yield i
+
 
 def corrcoef(x, y=None, rowvar=True, fweights=None, aweights=None):
     """

@@ -10,9 +10,8 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 from os.path import expanduser
 
-from yaml import load
-
 from tact.util import deep_update
+from yaml import load
 
 try:
     from yaml import CLoader as Loader
