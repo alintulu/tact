@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name="tact",
       version="0.1pre",
@@ -10,7 +10,7 @@ setup(name="tact",
       author="Corin Hoad",
       author_email="c.h@cern.ch",
       license="BSD",
-      packages=["tact"],
+      packages=find_packages(),
       entry_points={
           "console_scripts": ["tact=tact.tact:main",
                               "tact2D=tact_2D:main"],
