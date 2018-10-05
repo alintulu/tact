@@ -368,10 +368,6 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     """
 
     # TODO: return TH1I if weights are integers
-
-    if w is None:
-        w = np.ones(len(x))
-
     _, bin_edges = np.histogram(x, bins=bins, range=range,
                                 weights=w)
 
@@ -382,7 +378,7 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
     return h
 
 
-def poisson_pseudodata(x, bins=20, range=(0, 1)):
+def poisson_pseudodata(x, w=None, bins=20, range=(0, 1)):
     """
     Generate Poisson pseudodata from a DataFrame by binning the MVA
     discriminant in a TH1D and applying a Poisson randomisation to each bin.
@@ -391,6 +387,8 @@ def poisson_pseudodata(x, bins=20, range=(0, 1)):
     ----------
     x : array-like
         Array containing the data to be used as a base for the pseudodata.
+    w : array-like
+        Weights. If None, then samples are equally weighted.
     bins : int, optional
         Number of bins in TH1.
     range : (float, float), optional
@@ -406,7 +404,7 @@ def poisson_pseudodata(x, bins=20, range=(0, 1)):
     Should only be used in THETA.
     """
 
-    h = col_to_TH1(x, bins=bins, range=range)
+    h = col_to_TH1(x, w=w, bins=bins, range=range)
 
     for i in xrange(1, h.GetNbinsX() + 1):
         try:
@@ -507,7 +505,7 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
             if data_process is not None and \
                     re.search(r"{}$".format(data_process), tree):
                 h_data = h.Clone()
-            elif not re.search(r"(minus)|(plus)$", tree):
+            elif not re.search(r"(?:plus|minus|Up|Down)$", tree):
                 pseudo_dfs.append(df)
 
             h.SetDirectory(fo)
@@ -517,7 +515,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
     h = ROOT.TH1D()
     h.Sumw2()
     if data == "poisson":
-        h = poisson_pseudodata(pd.concat(pseudo_dfs), bins=bins, range=range)
+        pseudo_df = pd.concat(pseudo_dfs)
+        h = poisson_pseudodata(pseudo_df.MVA, w=pseudo_df[branch_w], bins=bins, range=range)
     elif data == "empty":
         h = ROOT.TH1D()
     elif data == "real":
