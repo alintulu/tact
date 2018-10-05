@@ -121,14 +121,14 @@ def make_corelation_plot(df, w=None, filename="corr.pdf", **kwargs):
 
     for (i, j), z in maenumerate(corr_masked):
         ax.text(j, i, '{}'.format(int(round(z * 100))),
-                ha='center', va='center',
+                ha='center', va='center', fontsize=15,
                 bbox=dict(boxstyle='square', facecolor='white', alpha=0.8,
                           lw=0))
 
     fig.set_size_inches(1 + nvars / 1.5, 1 + nvars / 1.5)
-    plt.xticks(xrange(nvars), df.columns, rotation=90)
+    plt.xticks(xrange(nvars), df.columns, rotation=90, fontsize=15)
     ax.yaxis.set_ticks_position("right")
-    plt.yticks(xrange(nvars), df.columns)
+    plt.yticks(xrange(nvars), df.columns, fontsize=15)
     ax.tick_params(axis='both', which='both', length=0)  # hide ticks
     ax.grid(False)
 
