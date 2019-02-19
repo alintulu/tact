@@ -102,13 +102,13 @@ def mlp(df_train, pre, y, serialized_model, sample_weight=None,
     """
 
     def build_model():
-        from keras.models import layer_module
+        from keras.layers import deserialize
 
         # Set input layer shape
         serialized_model["config"][0]["config"]["batch_input_shape"] \
             = (None, df_train.shape[1])
 
-        model = layer_module.deserialize(serialized_model)
+        model = deserialize(serialized_model)
 
         model.compile(**compile_params)
 
