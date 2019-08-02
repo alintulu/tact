@@ -14,6 +14,7 @@ from __future__ import (absolute_import, division, print_function,
 import sys
 
 import matplotlib.pyplot as plt
+plt.style.use("seaborn-whitegrid")
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -33,7 +34,6 @@ def main():
     cfg = config.cfg
 
     np.random.seed(cfg["seed"])
-    plt.style.use("ggplot")
 
     # Make ouptut directories
     rootIO.makedirs(cfg["plot_dir"], cfg["root_dir"], cfg["mva_dir"])
