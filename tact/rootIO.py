@@ -369,6 +369,7 @@ def col_to_TH1(x, w=None, name="MVA", title="MVA", bins=20, range=(0, 1)):
 
     h = ROOT.TH1D(name, title, len(bin_edges) - 1, bin_edges)
     h.Sumw2()
+    h.SetBinErrorOption(0)  # kNormal
     fill_hist(h, x, w)
 
     return h
@@ -510,6 +511,7 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
 
     h = ROOT.TH1D()
     h.Sumw2()
+    h.SetBinErrorOption(0)  # kNormal
     if data == "poisson":
         pseudo_df = pd.concat(pseudo_dfs)
         h = poisson_pseudodata(pseudo_df.MVA, w=pseudo_df[branch_w], bins=bins, range=range)
