@@ -234,17 +234,13 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
     sig_dfs = []
     bkg_dfs = []
 
-    root_files = glob.iglob(input_dir + r"*.root")
+    processes = signals + backgrounds
 
-    for root_file in root_files:
-        process = get_process_name(root_file)
-
-        # Only include specfied processes
-        if process not in signals + backgrounds:
-            continue
-
-        df = read_tree(root_file, "Ttree_{}".format(process),
-                       columns=features + [branch_w], where=selection)
+    for process in processes:
+        df = read_tree(input_dir + "histofile_{}.root".format(process),
+                       "Ttree_{}".format(process),
+                       columns=features + [branch_w],
+                       where=selection)
 
         if df.empty:
             continue
