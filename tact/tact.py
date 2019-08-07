@@ -13,6 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-whitegrid")
 import numpy as np
@@ -22,6 +23,9 @@ from tact import binning, classifiers, config, metrics
 from tact import plotting as pt
 from tact import preprocessing, rootIO
 
+mpl.rcParams.update({"font.family": "serif",
+                     "pgf.texsystem": "pdflatex",
+                     "pgf.rcfonts": False})
 
 def main():
     # Read configuration
@@ -62,13 +66,13 @@ def main():
     bkg_df = df[df.Signal == 0]
 
     pt.make_variable_histograms(df[features], df.Signal, w=df.EvtWeight,
-                                bins=42, filename="{}vars_{}.pdf"
+                                bins=42, filename="{}vars_{}.pgf"
                                 .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(sig_df[features], w=sig_df.MVAWeight,
-                            filename="{}corr_sig_{}.pdf"
+                            filename="{}corr_sig_{}.pgf"
                             .format(cfg["plot_dir"], cfg["channel"]))
     pt.make_corelation_plot(bkg_df[features], w=bkg_df.MVAWeight,
-                            filename="{}corr_bkg_{}.pdf"
+                            filename="{}corr_bkg_{}.pgf"
                             .format(cfg["plot_dir"], cfg["channel"]))
 
     # Split sample
@@ -132,12 +136,12 @@ def main():
                           df_test[df_test.Signal == 1].EvtWeight,
                           df_train[df_train.Signal == 0].EvtWeight,
                           df_test[df_test.Signal == 0].EvtWeight,
-                          filename="{}response_{}.pdf".format(cfg["plot_dir"],
+                          filename="{}response_{}.pgf".format(cfg["plot_dir"],
                                                               cfg["channel"]))
     pt.make_roc_curve(df_train.MVA, df_test.MVA,
                       df_train.Signal, df_test.Signal,
                       df_train.EvtWeight, df_test.EvtWeight,
-                      filename="{}roc_{}.pdf".format(cfg["plot_dir"],
+                      filename="{}roc_{}.pgf".format(cfg["plot_dir"],
                                                      cfg["channel"]))
 
     # Binning
@@ -179,6 +183,7 @@ def main():
         data=cfg["root_out"]["data"], combine=cfg["root_out"]["combine"],
         data_process=cfg["data_process"], drop_nan=cfg["root_out"]["drop_nan"],
         channel=cfg["channel"], range=outrange,
+        suffix=cfg["root_out"]["suffix"],
         filename="{}mva_{}.root".format(cfg["root_dir"], cfg["channel"]))
 
 

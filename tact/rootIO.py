@@ -286,7 +286,7 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
     return pd.concat([sig_df, bkg_df]).reset_index(drop=True)
 
 
-def _format_TH1_name(name, combine=True, channel="all"):
+def _format_TH1_name(name, combine=True, channel="all", suffix=None):
     """
     Modify name of Ttrees from input files to a format expected by combine
     or THETA.
@@ -302,6 +302,8 @@ def _format_TH1_name(name, combine=True, channel="all"):
     channel : string, optional
         The channel contained within the histogram. Used in naming the TH1
         only.
+    suffix : string, optional
+        Suffix to be added to the name of every systematic
 
     Returns
     -------
@@ -318,10 +320,15 @@ def _format_TH1_name(name, combine=True, channel="all"):
     combine flag is set.
     """
 
-    new_name = re.sub(r"^Ttree", "MVA_{}_".format(channel), name)
-    if combine:
-        new_name = re.sub(r"__plus$", "Up", new_name)
-        new_name = re.sub(r"__minus$", "Down", new_name)
+    suffix = "" if suffix is None else suffix
+
+    updown = ("Up", "Down") if combine else ("__plus", "__minus")
+
+    new_name = re.sub(r"^Ttree", "MVA_{}{}_".format(channel, suffix), name)
+    new_name = re.sub(
+        r"(?:__plus|Up)$", "{}{}".format(suffix, updown[0]), new_name)
+    new_name = re.sub(
+        r"(?:__minus|Down)$", "{}{}".format(suffix, updown[1]), new_name)
 
     if name == new_name:
         raise ValueError("New histogram name ", new_name,
@@ -415,7 +422,7 @@ def poisson_pseudodata(x, w=None, bins=20, range=(0, 1)):
 def write_root(input_dir, features, response_function, selection=None, bins=20,
                range=(0, 1), drop_nan=False, data="empty", combine=True,
                channel="all", branch_w="EvtWeight", data_process=None,
-               filename="mva.root"):
+               suffix=None, filename="mva.root"):
     """
     Evaluate an MVA and write the result to TH1s in a ROOT file.
 
@@ -457,6 +464,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
     data_process : string, optional
         Name of "process" which contains real data. Will be ignored in poisson
         pseudodata generation and used as the data histogram if data="real".
+    suffix : string, optional
+        Suffix added to the name of every variable and systematic
     filename : string, optional
         Name of the output root file (including directory).
 
@@ -494,7 +503,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
                 if drop_nan:
                     df = df[pd.notnull(df[branch_w])]
 
-            tree = _format_TH1_name(tree, combine=combine, channel=channel)
+            tree = _format_TH1_name(
+                tree, combine=combine, channel=channel, suffix=suffix)
             h = col_to_TH1(df.MVA, w=df[branch_w],
                            bins=bins, name=tree, title=tree, range=range)
 
@@ -522,7 +532,8 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
     else:
         raise ValueError("Unrecogised value for option 'data': ", data)
 
-    h.SetName("MVA_{}__{}".format(channel, "data_obs" if combine else "DATA"))
+    h.SetName("MVA_{}{}__{}".format(
+        channel, suffix or "", "data_obs" if combine else "DATA"))
     h.SetDirectory(fo)
     fo.cd()
     h.Write()
