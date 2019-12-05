@@ -24,6 +24,13 @@ from collections import namedtuple
 
 from sklearn.pipeline import make_pipeline
 
+def get_preprocessor_flags(pre, sample_weight):
+
+    from inspect import getargspec
+
+    return {(type(p).__name__.lower() + "__sample_weight"): sample_weight
+            for p in pre if "sample_weight" in getargspec(p.fit)[0]}
+
 
 def evaluate_mva(df, mva):
     """
@@ -146,7 +153,9 @@ def mlp(df_train, pre, y, serialized_model, sample_weight=None,
 
     mva.fit(df_train, y,
             kerasclassifier__sample_weight=sample_weight,
-            kerasclassifier__callbacks=callbacks)
+            kerasclassifier__callbacks=callbacks,
+            kerasclassifier__validation_split=0.25,
+            **get_preprocessor_flags(pre, sample_weight))
 
     return mva
 
