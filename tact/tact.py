@@ -54,9 +54,7 @@ def main():
     # Configure preprocessing
     pre = []
     for p in cfg["preprocessors"]:
-        if p["preprocessor"] == "robust_scaler":
-            preprocessing.add_robust_scaler(pre, **p["config"])
-        elif p["preprocessor"] == "standard_scaler":
+        if p["preprocessor"] == "standard_scaler":
             preprocessing.add_standard_scaler(pre, **p["config"])
         elif p["preprocessor"] == "PCA":
             preprocessing.add_PCA(pre, **p["config"])
