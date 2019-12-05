@@ -260,7 +260,8 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
 
         # Count events
         print("Process ", process, " contains ", len(df.index), " (",
-              df[branch_w].sum(), ") events", sep='')
+              df[branch_w].sum(), " ± ", df[branch_w].pow(2).sum() ** 0.5,
+              ") events", sep='')
 
         # Label process
         df = df.assign(Process=process)
@@ -283,6 +284,16 @@ def read_trees(input_dir, features, signals, backgrounds, selection=None,
     sig_df[col_target] = 1
     bkg_df[col_target] = 0
 
+    df = pd.concat([sig_df, bkg_df]).reset_index(drop=True)
+
+    # Count events again
+    print("There are ", len(sig_df.index), " (", sig_df[branch_w].sum(), " ± ",
+          sig_df[branch_w].pow(2).sum() ** 0.5, ") signal events", sep='')
+    print("There are ", len(bkg_df.index), " (", bkg_df[branch_w].sum(), " ± ",
+          bkg_df[branch_w].pow(2).sum() ** 0.5, ") background events", sep='')
+    print("Making ", len(df.index), " (", df[branch_w].sum(), " ± ",
+          df[branch_w].pow(2).sum() ** 0.5, ") events in total", sep='')
+
     return pd.concat([sig_df, bkg_df]).reset_index(drop=True)
 
 
@@ -303,7 +314,8 @@ def _format_TH1_name(name, combine=True, channel="all", suffix=None):
         The channel contained within the histogram. Used in naming the TH1
         only.
     suffix : string, optional
-        Suffix to be added to the name of every systematic
+        Suffix to be added to the name of every variavble, process, and
+        systematic
 
     Returns
     -------
@@ -324,7 +336,8 @@ def _format_TH1_name(name, combine=True, channel="all", suffix=None):
 
     updown = ("Up", "Down") if combine else ("__plus", "__minus")
 
-    new_name = re.sub(r"^Ttree", "MVA_{}{}_".format(channel, suffix), name)
+    new_name = re.sub(r"(?<=Ttree_)(.+?)(?=__|$)", r"\1{}".format(suffix), name)
+    new_name = re.sub(r"^Ttree", "MVA_{}{}_".format(channel, suffix), new_name)
     new_name = re.sub(
         r"(?:__plus|Up)$", "{}{}".format(suffix, updown[0]), new_name)
     new_name = re.sub(
@@ -465,7 +478,7 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
         Name of "process" which contains real data. Will be ignored in poisson
         pseudodata generation and used as the data histogram if data="real".
     suffix : string, optional
-        Suffix added to the name of every variable and systematic
+        Suffix added to the name of every variable, systematic, and process
     filename : string, optional
         Name of the output root file (including directory).
 
@@ -508,16 +521,23 @@ def write_root(input_dir, features, response_function, selection=None, bins=20,
             h = col_to_TH1(df.MVA, w=df[branch_w],
                            bins=bins, name=tree, title=tree, range=range)
 
-            # Trees used in pseudodata should be not systematics and not data
-            if data_process is not None and \
-                    re.search(r"{}$".format(data_process), tree):
-                h_data = h.Clone()
-            elif not re.search(r"(?:plus|minus|Up|Down)$", tree):
-                pseudo_dfs.append(df)
-
             h.SetDirectory(fo)
             fo.cd()
             h.Write()
+
+            # Trees used in pseudodata should be not systematics and not data
+            if data_process is not None and \
+                    re.search(r"{}{}$".format(data_process, suffix), tree):
+                print("Found data process")
+                print(data_process)
+                print(h.GetName)
+                h_data = h.Clone()
+                h.SetDirectory(fo)
+                fo.cd()
+                h.Write()
+                continue
+            elif not re.search(r"(?:plus|minus|Up|Down)$", tree):
+                pseudo_dfs.append(df)
 
     h = ROOT.TH1D()
     h.Sumw2()
