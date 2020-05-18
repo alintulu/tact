@@ -12,8 +12,7 @@ setup(name="tact",
       license="BSD",
       packages=find_packages(),
       entry_points={
-          "console_scripts": ["tact=tact.tact:main",
-                              "tact2D=tact_2D:main"],
+          "console_scripts": ["tact=tact.tact:main"],
       },
       install_requires=[
           "dill",
