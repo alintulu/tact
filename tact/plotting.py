@@ -67,7 +67,7 @@ def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
     ncols = 2
     nrows = (n_histograms + ncols - 1) // ncols
 
-    fig_size = (ncols * 1.618 * 3, nrows * 3)
+    fig_size = (ncols * 2 * 1.3, nrows * 2)
 
     fig, ax = plt.subplots(ncols=ncols, nrows=nrows)
     fig.set_size_inches(fig_size)
@@ -83,26 +83,38 @@ def make_variable_histograms(df, cat, w=None, filename="vars.pdf", **kwargs):
     plot_histograms(df_bkg, ax, w_bkg)
 
     for axis in ax:
-        axis.set_xlabel(axis.get_title(), family="monospace", size="xx-large")
+        axis.set_xlabel(axis.get_title(),
+                        family="monospace",
+                        size="x-large")
+
+        # In the tZq analysis, this will add units to the xlabel, you might
+        # want to comment in the filename = re.sub(r"... line below when saving plots individually
+        # to exclude the unit from filenames
+        # axis.set_xlabel(re.sub(r"(?:Pt|Mass|^met)$", r"\g<0> (GeV)", axis.get_title()),
+        #                 family="monospace",
+        #                 size="x-large")
+
         axis.set_ylim(bottom=0)
         axis.set_title("")
-        axis.legend(["Signal", "Background"], fontsize="large",
+        axis.legend(["Sig.", "Bkg."], fontsize="large",
                     frameon=True,
                     fancybox=True,
                     facecolor='w',
                     framealpha=0.8)
-        axis.tick_params(axis='x', labelsize="large")
+        axis.tick_params(axis='x', labelsize="x-large")
         axis.set_yticklabels([])
 
+    fig.tight_layout()
     fig.savefig(filename)
 
     # # Save plots individually
-    dir = re.search(r"((?:[^\/]*\/)*)(?:.*)", filename).group(1) or ""
-    makedirs(dir + "/features/")
-    for axis in ax:
-        extent = axis.get_tightbbox(fig.canvas.get_renderer(), True).transformed(fig.dpi_scale_trans.inverted())
-        fig.savefig("{}/features/{}.pdf".format(dir, axis.get_xlabel()),
-                    bbox_inches=extent)
+    # dir = re.search(r"((?:[^\/]*\/)*)(?:.*)", filename).group(1) or ""
+    # makedirs(dir + "/features/")
+    # for axis in ax:
+    #     extent = axis.get_tightbbox(fig.canvas.get_renderer(), True).transformed(fig.dpi_scale_trans.inverted())
+    #     # filename = re.sub(r" \(GeV\)$", "", axis.get_xlabel())
+    #     fig.savefig("{}/features/{}.pgf".format(dir, filename),
+    #                 bbox_inches=extent)
 
 
 def make_corelation_plot(df, w=None, filename="corr.pdf", **kwargs):
@@ -193,22 +205,22 @@ def make_response_plot(x_train_sig, x_test_sig, x_train_bkg, x_test_bkg,
 
     x_range = (0, 1)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 3))
 
     # Plot histograms of test samples
     ax = x_test_sig.plot.hist(bins=bins, ax=ax, weights=w_test_sig,
                               normed=True, range=x_range, alpha=0.5,
-                              label="Signal (test set)")
+                              label="Sig. (test set)")
     ax = x_test_bkg.plot.hist(bins=bins, ax=ax, weights=w_test_bkg,
                               normed=True, range=x_range, alpha=0.5,
-                              label="Background (test set)")
+                              label="Bkg. (test set)")
 
     plt.gca().set_prop_cycle(None)  # use the same colours again
 
     # Plot error bar plots of training samples
-    for x, label, w in ((x_train_sig, "Signal (training set)",
+    for x, label, w in ((x_train_sig, "Sig. (train set)",
                          w_train_sig),
-                        (x_train_bkg, "Background (training set)",
+                        (x_train_bkg, "Bkg. (train set)",
                          w_train_bkg)):
         hist, bin_edges = np.histogram(x, bins=bins, range=x_range,
                                        weights=w)
@@ -222,17 +234,21 @@ def make_response_plot(x_train_sig, x_test_sig, x_train_bkg, x_test_bkg,
         ax.errorbar(bin_centers, hist, fmt=",", label=label,
                     yerr=yerr, xerr=(-sub(*x_range) / bins / 2))
 
-    ax.tick_params(axis='x', which='both', labelsize="x-large")
-    ax.legend(fontsize="small",
+    ax.tick_params(axis='x', which='both', labelsize="large")
+    ax.legend(fontsize="medium",
               frameon=True,
               fancybox=True,
               facecolor='w',
-              framealpha=0.8)
-    ax.set_xlabel("Response", fontsize="xx-large")
+              framealpha=0.8,
+              ncol=2,
+              columnspacing=0.5)
+
+    ax.set_xlabel("Response", fontsize="large")
     ax.set_ylabel("")
     ax.set_ylim(bottom=0)
     ax.set_yticklabels([])
 
+    fig.tight_layout()
     fig.savefig(filename, pad_inches=0, bbox_inches="tight")
 
 
@@ -279,25 +295,26 @@ def make_roc_curve(mva_response_train, mva_response_test, y_train, y_test,
                                       sample_weight=x["w"])
         roc_auc[i] = auc(fpr[i], tpr[i], reorder=True)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 3))
 
     for i in fpr:
         ax.plot(fpr[i], tpr[i],
-                label="ROC curve for {} set (AUROC = {:0.2f})"
-                .format(i, roc_auc[i]))
+                label="{} set (AUROC = {:0.2f})"
+                .format(i.capitalize(), roc_auc[i]))
 
     ax.plot([0, 1], [0, 1], "k--")
 
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
-    ax.set_xlabel("False Positive Rate", fontsize="xx-large")
-    ax.set_ylabel("True Positive Rate", fontsize="xx-large")
-    ax.tick_params(axis='both', which='both', labelsize="x-large")
+    ax.set_xlabel("False Positive Rate", fontsize="large")
+    ax.set_ylabel("True Positive Rate", fontsize="large")
+    ax.tick_params(axis='both', which='both', labelsize="large")
     ax.legend(loc="lower right",
               frameon=True,
               fancybox=True,
               facecolor='w',
               framealpha=0.8,
-              fontsize="large")
+              fontsize="medium")
 
+    fig.tight_layout()
     fig.savefig(filename, pad_inches=0, bbox_inches="tight")
