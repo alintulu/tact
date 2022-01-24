@@ -47,7 +47,8 @@ def main():
         cfg["input_dir"], cfg["features"], cfg["signals"], cfg["backgrounds"],
         selection=cfg["selection"],
         negative_weight_treatment=cfg["negative_weight_treatment"],
-        equalise_signal=cfg["equalise_signal"])
+        equalise_signal=cfg["equalise_signal"],
+        branch_w=cfg["branch_w"])
 
     features = cfg["features"]
 
